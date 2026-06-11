@@ -1,1 +1,55 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Account | Trades</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="account.css"></head><body class="account-body"><header class="account-header"><a class="brand" href="/"><span class="brand-mark"><span></span><span></span><span></span></span><span>TRADES</span></a><a class="button button-outline" href="/">Back to marketplace</a></header><main class="account-shell"><section class="account-story"><span class="kicker kicker-light">Built for every market</span><h1>One network.<br><em>Two sides.</em><br>Better projects.</h1><p>Create a company account that can hire subcontractors, find trade work, or do both. Your capabilities can grow as your business grows.</p><ul><li>Private company-to-company conversations</li><li>Role-aware dashboards and workflows</li><li>State-based service areas and credentials</li></ul></section><section class="account-panel"><div class="account-tabs"><button class="active" type="button" data-tab="signup">Create account</button><button type="button" data-tab="login">Sign in</button></div><div id="accountNotice" class="account-notice" hidden></div><form id="signupForm" class="account-form"><div><span class="kicker">Get started</span><h2>Build your company profile.</h2><p>DFW is our first active market, but your account is ready to work nationwide.</p></div><div class="capability-grid"><label><input type="checkbox" name="capability" value="contractor"><span><strong>Contractor</strong><small>I hire subcontractors and post jobs.</small></span></label><label><input type="checkbox" name="capability" value="subcontractor"><span><strong>Subcontractor</strong><small>I find work and submit bids.</small></span></label></div><div class="form-row"><label><span>Your name</span><input name="fullName" required autocomplete="name"></label><label><span>Company name</span><input name="companyName" required autocomplete="organization"></label></div><div class="form-row"><label><span>City</span><input name="city" required autocomplete="address-level2" value="Dallas"></label><label><span>State</span><input name="state" required maxlength="2" value="TX" autocomplete="address-level1"></label></div><label><span>Primary trades, comma separated</span><input name="trades" placeholder="Framing, Electrical, Concrete"></label><div class="form-row"><label><span>Work email</span><input name="email" type="email" required autocomplete="email"></label><label><span>Password</span><input name="password" type="password" required minlength="8" autocomplete="new-password"></label></div><button class="button button-orange button-full" type="submit">Create company account</button></form><form id="loginForm" class="account-form" hidden><div><span class="kicker">Welcome back</span><h2>Sign in to your workspace.</h2><p>Manage jobs, opportunities, and conversations from one dashboard.</p></div><label><span>Work email</span><input name="email" type="email" required autocomplete="email"></label><label><span>Password</span><input name="password" type="password" required autocomplete="current-password"></label><button class="button button-dark button-full" type="submit">Sign in</button></form></section></main><script src="account.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Create your account | Trades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="account.css">
+  <link rel="stylesheet" href="account-page.css">
+</head>
+<body class="account-body">
+  <header class="account-header">
+    <a class="brand" href="/" aria-label="Trades home"><span class="brand-mark"><span></span><span></span><span></span></span><span>TRADES</span></a>
+    <a class="button button-outline" href="/">Back to marketplace</a>
+  </header>
+  <main class="account-shell">
+    <section class="account-story" aria-labelledby="storyTitle">
+      <div class="account-story-content">
+        <span class="kicker kicker-light" id="storyKicker">Built for every market</span>
+        <h1 id="storyTitle">One network.<br><em>Two sides.</em><br>Better projects.</h1>
+        <p id="storyBody">Create a company account that can hire subcontractors, find trade work, or do both.</p>
+        <ul id="storyList"><li>Find and hire trusted trade partners</li><li>Bid on nearby jobs and grow your business</li><li>Build a reputation contractors can verify</li></ul>
+      </div>
+      <p class="account-story-note">Starting in DFW. Built to work nationwide.</p>
+    </section>
+    <section class="account-panel">
+      <div class="account-card">
+        <div class="account-tabs" role="tablist" aria-label="Account access">
+          <button id="signupTab" class="active" type="button" role="tab" aria-selected="true" aria-controls="signupForm" data-tab="signup">Create account</button>
+          <button id="loginTab" type="button" role="tab" aria-selected="false" aria-controls="loginForm" data-tab="login">Sign in</button>
+        </div>
+        <div id="accountNotice" class="account-notice" role="status" aria-live="polite" hidden></div>
+        <form id="signupForm" class="account-form" aria-labelledby="signupHeading">
+          <div class="account-intro"><span class="kicker">Get started</span><h2 id="signupHeading">Build your company profile.</h2><p>Tell contractors and trade partners who you are and how you work.</p></div>
+          <fieldset class="account-fieldset"><legend>How will you use Trades?</legend><div class="capability-grid"><label><input type="checkbox" name="capability" value="contractor"><span><strong>Contractor</strong><small>I post jobs and hire subcontractors.</small></span></label><label><input type="checkbox" name="capability" value="subcontractor"><span><strong>Subcontractor</strong><small>I find work and submit bids.</small></span></label></div><small class="field-help">Choose one or both. You can update this later.</small></fieldset>
+          <fieldset class="account-fieldset"><legend>Company details</legend><div class="form-row"><label><span>Your name</span><input name="fullName" required autocomplete="name" placeholder="Your full name"></label><label><span>Company name</span><input name="companyName" required autocomplete="organization" placeholder="Your company name"></label></div><div class="form-row location-row"><label><span>City</span><input name="city" required autocomplete="address-level2" value="Dallas"></label><label><span>State</span><input name="state" required maxlength="2" value="TX" autocomplete="address-level1"></label></div><label><span>Primary trades</span><input name="trades" placeholder="Framing, Electrical, Concrete"><small class="field-help">Separate multiple trades with commas.</small></label></fieldset>
+          <fieldset class="account-fieldset"><legend>Account security</legend><div class="form-row"><label><span>Work email</span><input name="email" type="email" required autocomplete="email" placeholder="you@company.com"></label><label><span>Password</span><input name="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters"><small class="field-help">Use at least 8 characters.</small></label></div></fieldset>
+          <button class="button button-orange button-full account-submit" type="submit" data-loading-label="Creating account...">Create company account</button>
+          <p class="account-switch">Already have an account? <button type="button" data-tab="login">Sign in</button></p>
+        </form>
+        <form id="loginForm" class="account-form login-form" aria-labelledby="loginHeading" hidden>
+          <div class="account-intro"><span class="kicker">Welcome back</span><h2 id="loginHeading">Sign in to your workspace.</h2><p>Manage jobs, bids, trusted connections, and conversations.</p></div>
+          <div class="login-fields"><label><span>Work email</span><input name="email" type="email" required autocomplete="email" placeholder="you@company.com"></label><label><span>Password</span><input name="password" type="password" required autocomplete="current-password" placeholder="Your password"></label></div>
+          <button class="button button-dark button-full account-submit" type="submit" data-loading-label="Signing in...">Sign in</button>
+          <p class="account-switch">New to Trades? <button type="button" data-tab="signup">Create an account</button></p>
+        </form>
+      </div>
+    </section>
+  </main>
+  <script src="account.js"></script>
+</body>
+</html>
