@@ -1,0 +1,25 @@
+name: Prototype check
+
+on:
+  push:
+    paths:
+      - "prototype/**"
+      - ".github/workflows/prototype-check.yml"
+  pull_request:
+    paths:
+      - "prototype/**"
+      - ".github/workflows/prototype-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  javascript-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check prototype JavaScript syntax
+        run: node --check prototype/app.js
