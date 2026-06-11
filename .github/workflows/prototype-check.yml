@@ -1,29 +1,30 @@
-name: Prototype check
+name: Application check
 
 on:
   push:
     paths:
       - "prototype/**"
       - "server.js"
+      - "test/**"
       - "package.json"
       - ".github/workflows/prototype-check.yml"
   pull_request:
     paths:
       - "prototype/**"
       - "server.js"
+      - "test/**"
       - "package.json"
       - ".github/workflows/prototype-check.yml"
 
 permissions:
   contents: read
-
 jobs:
-  syntax:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Check server and prototype JavaScript syntax
+      - name: Check syntax and account communication flow
         run: npm run check
