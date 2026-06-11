@@ -1,12 +1,12 @@
 {
   "name": "trades-marketplace",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Nationwide B2B marketplace for contractors and subcontractors, launching in DFW",
   "engines": { "node": ">=20" },
   "scripts": {
     "start": "node server.js",
     "test": "node --test test/server.test.js",
-    "check": "node --check server.js && node --check prototype/app.js && node --check prototype/national.js && node --check prototype/account.js && node --check prototype/dashboard.js && npm test"
+    "check": "node --check server.js && node --check prototype/account.js && node --check prototype/dashboard.js && node --check prototype/jobs.js && npm test"
   }
 }
