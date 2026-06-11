@@ -1,6 +1,6 @@
 # Initial Data Model
 
-This is the proposed MVP domain model. It is intentionally payment-free and supports companies that both post and bid on jobs.
+This is the proposed nationwide-ready MVP domain model. Dallas-Fort Worth is the first active market, but no core entity is limited to Texas. Companies can both post and bid on jobs.
 
 ## Core entities
 
@@ -46,7 +46,6 @@ This is the proposed MVP domain model. It is intentionally payment-free and supp
 - slug
 - parent_trade_id
 - launch_priority
-- license_rule: none, texas_electrical, texas_hvac, texas_plumbing, or custom
 
 ### company_trades
 
@@ -60,17 +59,34 @@ This is the proposed MVP domain model. It is intentionally payment-free and supp
 
 - id
 - company_id
+- country_code
+- state_code
 - metro
 - county
 - postal_code
 - radius_miles
 
+### credential_rules
+
+- id
+- country_code
+- state_code
+- local_jurisdiction
+- trade_id
+- credential_type
+- issuing_authority
+- verification_source
+- required_for_badge
+
 ### credentials
 
 - id
 - company_id
+- credential_rule_id
 - type: license, insurance, workers_comp_status, certification, bond, or tax_document
 - issuing_authority
+- issuing_state
+- issuing_jurisdiction
 - credential_number
 - holder_name
 - issued_at
@@ -162,19 +178,10 @@ This is the proposed MVP domain model. It is intentionally payment-free and supp
 - submitted_at
 - updated_at
 
-### bid_attachments
-
-- id
-- bid_id
-- uploaded_by_user_id
-- file_path
-- file_name
-- created_at
-
 ### conversations
 
 - id
-- job_id
+- job_id: optional until a conversation is linked to a job
 - contractor_company_id
 - subcontractor_company_id
 - created_at
@@ -206,27 +213,9 @@ This is the proposed MVP domain model. It is intentionally payment-free and supp
 - status
 - created_at
 
-### reports
+### reports and audit_events
 
-- id
-- reporter_user_id
-- target_type
-- target_id
-- reason
-- details
-- status
-- created_at
-
-### audit_events
-
-- id
-- actor_user_id
-- company_id
-- entity_type
-- entity_id
-- action
-- metadata
-- created_at
+Reports support users, companies, jobs, bids, messages, and reviews. Audit events preserve sensitive actions and important marketplace state changes.
 
 ## Essential rules
 
@@ -236,16 +225,18 @@ This is the proposed MVP domain model. It is intentionally payment-free and supp
 - Only members of the posting company can view all bids for its job.
 - Bidding companies can view only their own bids.
 - A job can award only a submitted bid belonging to that job.
+- Conversation and message access is limited to participating companies.
 - Reviews require a completed job and a company that participated in that awarded job.
 - Each company can review the other company once per job.
 - Private credentials and attachments must use storage access rules, not merely hidden URLs.
 - Authorization must be enforced in the database with row-level security.
+- Credential requirements are configured by jurisdiction and trade, never hard-coded as Texas-only rules.
 
 ## Suggested first migration order
 
 1. users, companies, and company_members
 2. trades, company_trades, and service_areas
-3. credentials and portfolio_projects
+3. credential_rules, credentials, and portfolio_projects
 4. jobs, job_trades, and job_attachments
 5. invitations, bids, and bid_attachments
 6. conversations and messages
