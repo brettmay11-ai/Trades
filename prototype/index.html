@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Trades connects Texas contractors with qualified subcontractors.">
+  <title>Trades | Built for the people who build Texas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="announcement">
+    <span>Now building our founding Texas trade network</span>
+    <button type="button" data-open-modal="join">Join the early-access list <span aria-hidden="true">&rarr;</span></button>
+  </div>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Trades home">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span>TRADES</span>
+    </a>
+    <nav class="desktop-nav" aria-label="Main navigation">
+      <a href="#jobs">Browse jobs</a>
+      <a href="#trades">Find subcontractors</a>
+      <a href="#how-it-works">How it works</a>
+    </nav>
+    <div class="header-actions">
+      <button class="button button-ghost desktop-only" type="button" data-open-modal="signin">Sign in</button>
+      <button class="button button-dark" type="button" data-open-modal="post-job">Post a job</button>
+      <button class="menu-button" id="menuButton" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="mobile-nav" id="mobileNav" aria-label="Mobile navigation">
+    <a href="#jobs">Browse jobs</a>
+    <a href="#trades">Find subcontractors</a>
+    <a href="#how-it-works">How it works</a>
+    <button type="button" data-open-modal="signin">Sign in</button>
+  </nav>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-grid"></div>
+      <div class="hero-glow hero-glow-one"></div>
+      <div class="hero-glow hero-glow-two"></div>
+      <div class="hero-content">
+        <div class="eyebrow"><span></span> The Texas construction network</div>
+        <h1>The right trade.<br><em>The right crew.</em><br>Right here in Texas.</h1>
+        <p>Post scopes, compare qualified bids, and build a dependable network of subcontractors who know how to get the job done.</p>
+
+        <div class="role-switcher" aria-label="Choose your marketplace role">
+          <button class="role-option active" type="button" data-role="contractor">
+            <span class="role-icon" aria-hidden="true">&#9638;</span>
+            <span><strong>I hire subcontractors</strong><small>Post work and compare bids</small></span>
+          </button>
+          <button class="role-option" type="button" data-role="subcontractor">
+            <span class="role-icon" aria-hidden="true">&#9651;</span>
+            <span><strong>I find trade work</strong><small>Discover jobs and submit bids</small></span>
+          </button>
+        </div>
+
+        <div class="hero-search">
+          <label>
+            <span>Trade</span>
+            <select id="heroTrade" aria-label="Select trade">
+              <option value="all">All trades</option>
+            </select>
+          </label>
+          <label>
+            <span>Texas market</span>
+            <select id="heroMarket" aria-label="Select Texas market">
+              <option value="all">All Texas markets</option>
+            </select>
+          </label>
+          <button class="button button-orange" id="heroSearchButton" type="button">Browse open jobs <span aria-hidden="true">&rarr;</span></button>
+        </div>
+
+        <div class="hero-proof">
+          <div class="avatar-stack" aria-hidden="true"><span>MC</span><span>JR</span><span>SA</span><span>+8</span></div>
+          <p><strong>Built with Texas contractors</strong><br>for the way construction actually works.</p>
+        </div>
+      </div>
+
+      <aside class="hero-card" aria-label="Featured subcontractor profile">
+        <div class="hero-card-top">
+          <span class="profile-monogram">LP</span>
+          <div><strong>Lone Peak Framing</strong><small>Framing & rough carpentry</small></div>
+          <span class="badge badge-green">Available</span>
+        </div>
+        <div class="profile-rating"><strong>4.9</strong><span class="stars" aria-label="4.9 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span>28 completed jobs</span></div>
+        <div class="project-photo" role="img" aria-label="Framed residential structure"><div class="frame-lines"></div><span>Dallas-Fort Worth</span></div>
+        <div class="profile-facts"><span><strong>12</strong> person crew</span><span><strong>9 yrs</strong> in business</span><span><strong>45 mi</strong> service radius</span></div>
+        <div class="verified-row"><span class="verified-icon">&#10003;</span><span><strong>Insurance document current</strong><small>Checked Jun 2026</small></span></div>
+      </aside>
+    </section>
+
+    <section class="market-strip" aria-label="Marketplace statistics">
+      <div><strong>22</strong><span>launch trades</span></div>
+      <div><strong>Texas</strong><span>focused from day one</span></div>
+      <div><strong>Private</strong><span>competitive bids</span></div>
+      <div><strong>Real jobs</strong><span>verified reviews</span></div>
+    </section>
+
+    <section class="section jobs-section" id="jobs">
+      <div class="section-heading split-heading">
+        <div><span class="kicker">Work ready to bid</span><h2>Open jobs across Texas</h2><p>Clear scopes from contractors actively looking for qualified trade partners.</p></div>
+        <button class="button button-outline" type="button" id="clearFilters">View all open jobs</button>
+      </div>
+
+      <div class="filter-bar">
+        <label><span>Trade</span><select id="tradeFilter"><option value="all">All trades</option></select></label>
+        <label><span>Market</span><select id="marketFilter"><option value="all">All markets</option></select></label>
+        <label><span>Project type</span><select id="typeFilter"><option value="all">All project types</option></select></label>
+        <div class="result-count"><strong id="resultCount">0</strong><span>open jobs</span></div>
+      </div>
+
+      <div class="jobs-grid" id="jobsGrid" aria-live="polite"></div>
+      <div class="empty-state" id="emptyState" hidden><strong>No jobs match those filters yet.</strong><span>Try another trade or Texas market.</span><button class="button button-outline" type="button" id="emptyReset">Clear filters</button></div>
+    </section>
+
+    <section class="section trade-section" id="trades">
+      <div class="section-heading centered-heading"><span class="kicker">Every phase covered</span><h2>Find the trade you need</h2><p>Search specialized Texas crews by experience, service area, credentials, and track record.</p></div>
+      <div class="trade-grid" id="tradeGrid"></div>
+      <button class="text-link" id="showAllTrades" type="button">Show all launch trades <span aria-hidden="true">&darr;</span></button>
+    </section>
+
+    <section class="dark-section" id="how-it-works">
+      <div class="dark-intro"><span class="kicker kicker-light">Built around the award</span><h2>From scope to trusted partner.</h2><p>No lead-selling maze. No public race to the bottom. Just a clear workflow for finding and awarding qualified crews.</p><button class="button button-orange" type="button" data-open-modal="post-job">Post your first job</button></div>
+      <ol class="steps">
+        <li><span>01</span><div><strong>Post a clear scope</strong><p>Add the trade, location, plans, dates, and requirements subs need to price the work.</p></div></li>
+        <li><span>02</span><div><strong>Receive private bids</strong><p>Invite crews or let matching subcontractors submit detailed, private bids.</p></div></li>
+        <li><span>03</span><div><strong>Compare the whole picture</strong><p>Review price, scope, availability, credentials, portfolio, and completed-job reviews.</p></div></li>
+        <li><span>04</span><div><strong>Award and build your network</strong><p>Choose the right partner, keep communication together, and review the work after completion.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="section trust-section">
+      <div class="trust-visual">
+        <div class="texas-shape" aria-hidden="true">TX</div>
+        <div class="credential-card credential-one"><span>&#10003;</span><div><strong>Texas license current</strong><small>Source-checked credential</small></div></div>
+        <div class="credential-card credential-two"><span>&#10003;</span><div><strong>Completed-job reviews</strong><small>Only from awarded work</small></div></div>
+        <div class="credential-card credential-three"><span>&#10003;</span><div><strong>Insurance status</strong><small>Clear dates and documents</small></div></div>
+      </div>
+      <div class="trust-copy"><span class="kicker">Trust without the guesswork</span><h2>Know who is showing up.</h2><p>Construction credentials are specific. Trades shows exactly what has been checked, what is self-reported, and when a document expires.</p><ul><li><span>&#10003;</span>State-license checks for electrical, HVAC, and plumbing</li><li><span>&#10003;</span>Current insurance documents and expiration warnings</li><li><span>&#10003;</span>Ratings tied to completed, awarded jobs</li><li><span>&#10003;</span>Portfolio, crew size, service area, and availability</li></ul><a class="text-link" href="#trades">Explore qualified subcontractors <span aria-hidden="true">&rarr;</span></a></div>
+    </section>
+
+    <section class="cta-section">
+      <div><span class="kicker kicker-light">Founding Texas network</span><h2>Good work starts with the right people.</h2><p>Join contractors and subcontractors shaping a better way to build business together.</p></div>
+      <div class="cta-actions"><button class="button button-light" type="button" data-open-modal="post-job">I need a subcontractor</button><button class="button button-orange" type="button" data-open-modal="join">I want to find work</button></div>
+    </section>
+  </main>
+
+  <footer>
+    <a class="brand brand-light" href="#top"><span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span><span>TRADES</span></a>
+    <p>Built for the people who build Texas.</p>
+    <div><a href="#jobs">Jobs</a><a href="#trades">Trades</a><a href="#how-it-works">How it works</a></div>
+    <small>&copy; 2026 Trades. Interactive product prototype.</small>
+  </footer>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden></div>
+
+  <dialog class="modal" id="post-job-modal" aria-labelledby="postJobTitle">
+    <button class="modal-close" type="button" data-close-modal aria-label="Close">&times;</button>
+    <div class="modal-heading"><span class="kicker">Post a job</span><h2 id="postJobTitle">Find the right crew.</h2><p>Add the basics now. Detailed plans and requirements come next.</p></div>
+    <form id="postJobForm">
+      <label><span>Job title</span><input name="title" required placeholder="Example: Frame 18-unit townhome project"></label>
+      <div class="form-row"><label><span>Trade</span><select name="trade" id="postTrade" required></select></label><label><span>Texas market</span><select name="market" id="postMarket" required></select></label></div>
+      <div class="form-row"><label><span>Project type</span><select name="type" id="postType" required></select></label><label><span>Estimated budget</span><input name="budget" required placeholder="$25,000 - $40,000"></label></div>
+      <label><span>Scope summary</span><textarea name="description" required rows="4" placeholder="Describe the work, timing, materials, and major requirements."></textarea></label>
+      <button class="button button-orange button-full" type="submit">Publish sample job</button>
+    </form>
+  </dialog>
+
+  <dialog class="modal modal-small" id="signin-modal" aria-labelledby="signInTitle">
+    <button class="modal-close" type="button" data-close-modal aria-label="Close">&times;</button>
+    <div class="modal-heading"><span class="kicker">Welcome back</span><h2 id="signInTitle">Sign in to Trades</h2><p>The account system will be connected in the next build phase.</p></div>
+    <form id="signInForm"><label><span>Work email</span><input type="email" required placeholder="you@company.com"></label><button class="button button-dark button-full" type="submit">Continue with email</button></form>
+  </dialog>
+
+  <dialog class="modal modal-small" id="join-modal" aria-labelledby="joinTitle">
+    <button class="modal-close" type="button" data-close-modal aria-label="Close">&times;</button>
+    <div class="modal-heading"><span class="kicker">Early access</span><h2 id="joinTitle">Help build the network.</h2><p>Tell us where you fit in the Texas construction community.</p></div>
+    <form id="joinForm"><label><span>Work email</span><input type="email" required placeholder="you@company.com"></label><label><span>I primarily...</span><select required><option value="">Choose one</option><option>Hire subcontractors</option><option>Find subcontract work</option><option>Do both</option></select></label><button class="button button-orange button-full" type="submit">Join early access</button></form>
+  </dialog>
+
+  <dialog class="modal" id="job-detail-modal" aria-labelledby="jobDetailTitle">
+    <button class="modal-close" type="button" data-close-modal aria-label="Close">&times;</button>
+    <div id="jobDetailContent"></div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
