@@ -7,6 +7,6 @@
   "scripts": {
     "start": "node profile-server.js",
     "test": "node --test test/server.test.js",
-    "check": "node --check server.js && node --check profile-server.js && node --check prototype/account.js && node --check prototype/dashboard.js && node --check prototype/jobs.js && node --check prototype/profile.js && npm test"
+    "check": "node --check server.js && node --check profile-server.js && node --check prototype/home.js && node --check prototype/account.js && node --check prototype/dashboard.js && node --check prototype/jobs.js && node --check prototype/profile.js && npm test"
   }
 }
