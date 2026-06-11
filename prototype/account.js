@@ -1,7 +1,9 @@
 const notice=document.getElementById('accountNotice');
 const signupForm=document.getElementById('signupForm');
 const loginForm=document.getElementById('loginForm');
-const inviteToken=new URLSearchParams(location.search).get('invite');
+const pageParams=new URLSearchParams(location.search);
+const inviteToken=pageParams.get('invite');
+const selectedRole=['contractor','subcontractor'].includes(pageParams.get('role'))?pageParams.get('role'):'';
 let inviteMessage='';
 
 const views={
@@ -24,6 +26,7 @@ const views={
 function showNotice(message,error=false){notice.textContent=message;notice.hidden=false;notice.classList.toggle('error',error)}
 function hideNotice(){notice.hidden=true;notice.classList.remove('error')}
 async function api(path,options={}){const response=await fetch(path,{headers:{'Content-Type':'application/json'},...options}),data=await response.json();if(!response.ok)throw new Error(data.error||'Request failed');return data}
+function signupUrl(){const params=new URLSearchParams();if(inviteToken)params.set('invite',inviteToken);if(selectedRole)params.set('role',selectedRole);return `/signup${params.size?`?${params}`:''}`}
 
 function switchTab(name,{updateUrl=true}={}){
   const view=views[name]||views.signup;
@@ -37,13 +40,14 @@ function switchTab(name,{updateUrl=true}={}){
   document.getElementById('storyList').innerHTML=view.items.map(item=>`<li>${item}</li>`).join('');
   hideNotice();
   if(name==='signup'&&inviteMessage)showNotice(inviteMessage);
-  if(updateUrl)history.replaceState({tab:name},'',name==='login'?'/login':`/signup${inviteToken?`?invite=${encodeURIComponent(inviteToken)}`:''}`);
+  if(updateUrl)history.replaceState({tab:name},'',name==='login'?'/login':signupUrl());
 }
 
 function setSubmitting(form,submitting){const button=form.querySelector('[type="submit"]');if(!button.dataset.label)button.dataset.label=button.textContent;button.disabled=submitting;button.textContent=submitting?button.dataset.loadingLabel:button.dataset.label;form.setAttribute('aria-busy',String(submitting))}
 
 document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>switchTab(button.dataset.tab)));
 window.addEventListener('popstate',()=>switchTab(location.pathname==='/login'?'login':'signup',{updateUrl:false}));
+if(selectedRole){const capability=signupForm.querySelector(`[name="capability"][value="${selectedRole}"]`);if(capability)capability.checked=true}
 switchTab(location.pathname==='/login'?'login':'signup',{updateUrl:false});
 
 if(inviteToken)api(`/api/invites/preview?token=${encodeURIComponent(inviteToken)}`).then(data=>{inviteMessage=`${data.inviterCompany.name} invited you to join their trusted trade network. Create your account to connect automatically.`;if(!signupForm.hidden)showNotice(inviteMessage)}).catch(error=>showNotice(error.message,true));
