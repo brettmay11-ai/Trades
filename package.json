@@ -1,13 +1,12 @@
 {
   "name": "trades-marketplace",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Texas-first B2B marketplace for contractors and subcontractors",
-  "engines": {
-    "node": ">=20"
-  },
+  "description": "Nationwide B2B marketplace for contractors and subcontractors, launching in DFW",
+  "engines": { "node": ">=20" },
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check prototype/app.js"
+    "test": "node --test test/server.test.js",
+    "check": "node --check server.js && node --check prototype/app.js && node --check prototype/national.js && node --check prototype/account.js && node --check prototype/dashboard.js && npm test"
   }
 }
