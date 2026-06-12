@@ -12,11 +12,13 @@ String.prototype.replace=function(search,replacement){
   }
   if(source.includes("const notice=document.getElementById('accountNotice')")&&!source.includes('taxonomy-theme.js?v=20260612-themed-1'))source+=`;document.querySelector('link[href*=\"account-page.css\"]')?.setAttribute('href','account-page.css?v=20260612-compact-1');document.querySelector('link[href*=\"taxonomy.css\"]')?.setAttribute('href','taxonomy.css?v=20260612-themed-1');const themedPickerScript=document.createElement('script');themedPickerScript.src='taxonomy-theme.js?v=20260612-themed-1';document.body.appendChild(themedPickerScript);`;
   if(source.includes('id="profileView"')&&source.includes('src="jobs.js')){
-    source=originalReplace.call(source,/href="jobs\.css[^\"]*"/,'href="jobs.css?v=20260612-stable-3"');
-    source=originalReplace.call(source,/src="jobs\.js[^\"]*"/,'src="jobs.js?v=20260612-stable-3"');
-    source=originalReplace.call(source,/src="profile\.js[^\"]*"/,'src="profile.js?v=20260612-stable-3"');
-    if(!source.includes('role-label.js'))source=originalReplace.call(source,'</body>','<script src="role-label.js?v=20260612-stable-4"></script></body>');
+    source=originalReplace.call(source,'<small id="navRole">Account</small>','<small id="navRole">Company</small>');
+    source=originalReplace.call(source,/href="jobs\.css[^\"]*"/,'href="jobs.css?v=20260612-stable-5"');
+    source=originalReplace.call(source,/src="jobs\.js[^\"]*"/,'src="jobs.js?v=20260612-stable-5"');
+    source=originalReplace.call(source,/src="profile\.js[^\"]*"/,'src="profile.js?v=20260612-stable-5"');
+    if(!source.includes('role-label.js'))source=originalReplace.call(source,'</body>','<script src="role-label.js?v=20260612-stable-5"></script></body>');
   }
+  if(source.includes('function renderShell(){')&&source.includes("document.getElementById('navRole').textContent=roles"))source=originalReplace.call(source,"document.getElementById('navRole').textContent=roles","document.getElementById('navRole').textContent=company.capabilities.includes('contractor')&&company.capabilities.includes('subcontractor')?'Contractor & Subcontractor':company.capabilities.includes('contractor')?'Contractor':company.capabilities.includes('subcontractor')?'Subcontractor':'Company'");
   return originalReplace.call(source,search,replacement);
 };
 require('./reset-server.js');
