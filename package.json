@@ -6,7 +6,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "start": "node reset-server.js",
-    "test": "node --test test/server.test.js",
+    "test": "node --test test/server.test.js test/auth-flow.test.js",
     "check": "node --check server.js && node --check profile-server.js && node --check reset-server.js && node --check prototype/home.js && node --check prototype/account.js && node --check prototype/dashboard.js && node --check prototype/jobs.js && node --check prototype/profile.js && node --check prototype/location.js && node --check prototype/calendar.js && node --check prototype/marketplace.js && node --check prototype/marketplace-polish.js && npm test"
   }
 }
