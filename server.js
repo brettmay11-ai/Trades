@@ -372,6 +372,36 @@ async function api(req, res, url) {
       write(store);
       return json(res, 200, { job });
     }
+    const jobEdit = p.match(/^\/api\/jobs\/([^/]+)$/);
+    if (jobEdit && req.method === 'PATCH') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const job = store.jobs.find(item => item.id === jobEdit[1]);
+      if (!job || job.postingCompanyId !== context.company.id) return json(res, 403, { error: 'Only the posting contractor can edit this job.' });
+      if (job.status !== 'published') return json(res, 400, { error: 'Only published jobs can be edited.' });
+      const b = await body(req);
+      if (b.title !== undefined) job.title = clean(b.title, 180);
+      if (b.trade !== undefined) { const t = canonicalTrade(b.trade); if (!t) return json(res, 400, { error: 'Select a trade from the standard trade list.' }); job.trade = t; }
+      if (b.city !== undefined) job.city = clean(b.city, 80);
+      if (b.state !== undefined) job.state = clean(b.state, 2).toUpperCase();
+      if (b.budget !== undefined) job.budget = clean(b.budget, 100);
+      if (b.startDate !== undefined) job.startDate = clean(b.startDate, 20);
+      if (b.description !== undefined) job.description = clean(b.description, 3000);
+      if (!job.title || !job.city || job.state.length !== 2) return json(res, 400, { error: 'Job must have a title, city, and two-letter state.' });
+      job.updatedAt = now();
+      write(store);
+      return json(res, 200, { job: enrichJob(store, job, context.company) });
+    }
+    if (jobEdit && req.method === 'DELETE') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const idx = store.jobs.findIndex(item => item.id === jobEdit[1]);
+      if (idx === -1 || store.jobs[idx].postingCompanyId !== context.company.id) return json(res, 403, { error: 'Only the posting contractor can delete this job.' });
+      if (store.jobs[idx].status !== 'published') return json(res, 400, { error: 'Only published jobs can be deleted.' });
+      store.jobs.splice(idx, 1);
+      write(store);
+      return json(res, 200, { ok: true });
+    }
     const jobReviews = p.match(/^\/api\/jobs\/([^/]+)\/reviews$/);
     if (jobReviews && req.method === 'GET') {
       const context = auth(req, res, store);
