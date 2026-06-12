@@ -15,7 +15,7 @@ String.prototype.replace=function(search,replacement){
     source=originalReplace.call(source,/href="jobs\.css[^\"]*"/,'href="jobs.css?v=20260612-stable-3"');
     source=originalReplace.call(source,/src="jobs\.js[^\"]*"/,'src="jobs.js?v=20260612-stable-3"');
     source=originalReplace.call(source,/src="profile\.js[^\"]*"/,'src="profile.js?v=20260612-stable-3"');
-    if(!source.includes('role-label.js'))source=originalReplace.call(source,'</body>','<script src="role-label.js?v=20260612-stable-3"></script></body>');
+    if(!source.includes('role-label.js'))source=originalReplace.call(source,'</body>','<script src="role-label.js?v=20260612-stable-4"></script></body>');
   }
   return originalReplace.call(source,search,replacement);
 };
