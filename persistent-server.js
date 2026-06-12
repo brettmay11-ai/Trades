@@ -15,6 +15,9 @@ String.prototype.replace=function(search,replacement){
     source=originalReplace.call(source,/href="taxonomy\.css[^\"]*"/,'href="taxonomy.css?v=20260612-themed-1"');
     if(!source.includes('taxonomy-theme.js'))source=originalReplace.call(source,/<script src="account\.js/,'<script src="taxonomy-theme.js?v=20260612-themed-1"></script><script src="account.js');
   }
+  if(source.includes("const notice=document.getElementById('accountNotice')")&&!source.includes('taxonomy-theme.js?v=20260612-themed-1')){
+    source+=`;document.querySelector('link[href*=\"account-page.css\"]')?.setAttribute('href','account-page.css?v=20260612-compact-1');document.querySelector('link[href*=\"taxonomy.css\"]')?.setAttribute('href','taxonomy.css?v=20260612-themed-1');const themedPickerScript=document.createElement('script');themedPickerScript.src='taxonomy-theme.js?v=20260612-themed-1';document.body.appendChild(themedPickerScript);`;
+  }
   return originalReplace.call(source,search,replacement);
 };
 require('./reset-server.js');
