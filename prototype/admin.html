@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Owner Console | Trades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260613-admin1">
+  <link rel="stylesheet" href="admin.css?v=20260613-admin1">
+</head>
+<body class="admin-body">
+  <aside class="admin-nav">
+    <a class="brand brand-light" href="/"><span class="brand-mark"><span></span><span></span><span></span></span><span>TRADES</span></a>
+    <span class="owner-label">Owner console</span>
+    <nav>
+      <button class="active" data-admin-view="overview">Overview</button>
+      <button data-admin-view="companies">Users & companies</button>
+      <button data-admin-view="jobs">Marketplace jobs</button>
+      <button data-admin-view="activity">Recent activity</button>
+    </nav>
+    <div class="admin-owner"><span id="ownerInitials">TO</span><div><strong id="ownerName">Trades owner</strong><small id="ownerEmail"></small></div></div>
+    <a class="admin-back" href="/dashboard">Back to Trades</a>
+  </aside>
+  <main class="admin-main">
+    <header class="admin-header">
+      <div><span class="kicker">Platform intelligence</span><h1 id="pageTitle">Owner dashboard</h1><p id="pageDescription">A live view of the people, companies, and work moving through Trades.</p></div>
+      <div class="system-health"><span></span><div><strong>Application online</strong><small id="systemMeta">Loading platform data...</small></div></div>
+    </header>
+    <div class="admin-alert" id="adminAlert" hidden></div>
+    <section class="admin-view" id="overviewView">
+      <div class="admin-stat-grid" id="metricGrid"></div>
+      <div class="admin-grid">
+        <article class="admin-card admin-card-wide"><div class="card-title"><div><span class="kicker">Marketplace pulse</span><h2>Jobs and engagement</h2></div></div><div class="pulse-grid" id="pulseGrid"></div></article>
+        <article class="admin-card"><div class="card-title"><div><span class="kicker">Expansion</span><h2>Top markets</h2></div></div><div class="rank-list" id="locationBreakdown"></div></article>
+        <article class="admin-card"><div class="card-title"><div><span class="kicker">Supply</span><h2>Top trades</h2></div></div><div class="rank-list" id="tradeBreakdown"></div></article>
+        <article class="admin-card admin-card-wide"><div class="card-title"><div><span class="kicker">Newest accounts</span><h2>Recently joined companies</h2></div><button class="text-link" data-go-view="companies">View all</button></div><div class="company-preview" id="companyPreview"></div></article>
+      </div>
+    </section>
+    <section class="admin-view" id="companiesView" hidden>
+      <div class="view-toolbar"><div><span class="kicker">Platform directory</span><h2>Users & companies</h2></div><input id="companySearch" placeholder="Search name, email, city, or trade"></div>
+      <div class="admin-card table-card"><div class="admin-table-wrap"><table><thead><tr><th>Company</th><th>Owner</th><th>Role & trades</th><th>Marketplace</th><th>Trust</th><th>Joined</th></tr></thead><tbody id="companyTable"></tbody></table></div></div>
+    </section>
+    <section class="admin-view" id="jobsView" hidden>
+      <div class="view-toolbar"><div><span class="kicker">Marketplace operations</span><h2>All posted jobs</h2></div><input id="jobSearch" placeholder="Search jobs, companies, trades, or locations"></div>
+      <div class="admin-card table-card"><div class="admin-table-wrap"><table><thead><tr><th>Job</th><th>Posting company</th><th>Market</th><th>Status</th><th>Bids</th><th>Posted</th></tr></thead><tbody id="jobTable"></tbody></table></div></div>
+    </section>
+    <section class="admin-view" id="activityView" hidden>
+      <div class="view-toolbar"><div><span class="kicker">Audit feed</span><h2>Recent platform activity</h2></div><select id="activityFilter"><option value="">All activity</option><option value="account">Accounts</option><option value="job">Jobs</option><option value="bid">Bids</option><option value="message">Messages</option><option value="review">Reviews</option></select></div>
+      <div class="admin-card"><div class="activity-list" id="activityList"></div></div>
+    </section>
+  </main>
+  <script src="admin.js?v=20260613-admin1"></script>
+</body>
+</html>

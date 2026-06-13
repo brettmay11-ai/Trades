@@ -13,6 +13,7 @@ const dataFile = path.join(dataRoot, 'store.json');
 const sessionHours = 336;
 const resetMinutes = 30;
 const persistentStorage = Boolean(process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH);
+const adminEmails = new Set(String(process.env.TRADES_ADMIN_EMAILS || process.env.ADMIN_EMAILS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
 
 const trades = ['Framing and Rough Carpentry', 'Electrical', 'HVAC and Refrigeration', 'Concrete, Formwork, and Rebar', 'Plumbing', 'Drywall and Finishing', 'Painting and Coatings', 'Masonry, Brick, and Stone', 'Roofing', 'Excavation, Grading, and Sitework', 'Demolition', 'Insulation', 'Flooring and Tile', 'Finish Carpentry, Cabinets, and Millwork', 'Siding, Stucco, and Exterior Finishes', 'Windows, Doors, Glass, and Glazing', 'Landscaping and Irrigation', 'Fencing and Gates', 'Low-Voltage, Data, Security, and Access Control', 'Welding, Structural Steel, and Miscellaneous Metals', 'Waterproofing, Gutters, and Drainage', 'Cleaning, Hauling, and Final Jobsite Cleanup'];
 const tradeAliases = { framing: 'Framing and Rough Carpentry', carpentry: 'Framing and Rough Carpentry', hvac: 'HVAC and Refrigeration', concrete: 'Concrete, Formwork, and Rebar', drywall: 'Drywall and Finishing', painting: 'Painting and Coatings', masonry: 'Masonry, Brick, and Stone', excavation: 'Excavation, Grading, and Sitework', flooring: 'Flooring and Tile', tile: 'Flooring and Tile', 'stone and tile': 'Flooring and Tile', 'finish carpentry': 'Finish Carpentry, Cabinets, and Millwork', cabinetry: 'Finish Carpentry, Cabinets, and Millwork', siding: 'Siding, Stucco, and Exterior Finishes', 'doors and windows': 'Windows, Doors, Glass, and Glazing', 'glass and glazing': 'Windows, Doors, Glass, and Glazing', landscaping: 'Landscaping and Irrigation', fencing: 'Fencing and Gates', welding: 'Welding, Structural Steel, and Miscellaneous Metals', 'structural steel': 'Welding, Structural Steel, and Miscellaneous Metals', 'metal fabrication': 'Welding, Structural Steel, and Miscellaneous Metals', waterproofing: 'Waterproofing, Gutters, and Drainage', gutters: 'Waterproofing, Gutters, and Drainage', cleaning: 'Cleaning, Hauling, and Final Jobsite Cleanup', 'general labor': 'Cleaning, Hauling, and Final Jobsite Cleanup' };
@@ -113,6 +114,15 @@ function ctx(req, store) {
   return user && company ? { user, company, membership } : null;
 }
 function auth(req, res, store) { const context = ctx(req, store); if (!context) json(res, 401, { error: 'Sign in required' }); return context; }
+function adminAuth(req, res, store) {
+  const context = auth(req, res, store);
+  if (!context) return null;
+  if (context.user.platformRole !== 'admin' && !adminEmails.has(context.user.email)) {
+    json(res, 403, { error: 'Trades owner access required.' });
+    return null;
+  }
+  return context;
+}
 function companyById(store, id) { return store.companies.find(item => item.id === id); }
 function conv(store, id, companyId) { return store.conversations.find(item => item.id === id && item.companyIds.includes(companyId)); }
 function connection(store, a, b) { return store.networkConnections.find(item => [item.requesterCompanyId, item.targetCompanyId].includes(a) && [item.requesterCompanyId, item.targetCompanyId].includes(b)); }
@@ -170,6 +180,72 @@ function calendarIcs(store, job, companyId) {
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Trades//Shared Project Calendar//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT', `UID:${job.id}@trades.app`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`, `DTSTART;VALUE=DATE:${compact(job.startDate)}`, `DTEND;VALUE=DATE:${compact(addDay(job.endDate))}`, `SUMMARY:${icsEscape(job.title)}`, `DESCRIPTION:${icsEscape(`${job.trade} project with ${event.partnerCompany.name}. ${job.calendarNotes || job.description || ''}`)}`, `LOCATION:${icsEscape(`${job.city}, ${job.state}`)}`, 'END:VEVENT', 'END:VCALENDAR', ''].join('\r\n');
 }
 function validUrl(value) { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url.toString() : ''; } catch { return ''; } }
+function countBy(items, key) {
+  return Object.entries(items.reduce((counts, item) => {
+    const value = typeof key === 'function' ? key(item) : item[key];
+    const label = clean(value || 'Not specified', 140);
+    counts[label] = (counts[label] || 0) + 1;
+    return counts;
+  }, {})).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+function adminDashboard(store, context) {
+  const liveSessions = store.sessions.filter(item => item.expiresAt > now());
+  const companies = store.companies.map(company => {
+    const membership = store.memberships.find(item => item.companyId === company.id);
+    const user = store.users.find(item => item.id === membership?.userId);
+    const ratings = reviewSummary(store, company.id);
+    const profileValues = Object.keys(profileFields).filter(key => Boolean(company[key])).length;
+    return {
+      ...pub(company),
+      owner: user ? { id: user.id, fullName: user.fullName, email: user.email, createdAt: user.createdAt, activeSession: liveSessions.some(item => item.userId === user.id) } : null,
+      postedJobs: store.jobs.filter(item => item.postingCompanyId === company.id).length,
+      bidsSubmitted: store.bids.filter(item => item.biddingCompanyId === company.id).length,
+      connections: store.networkConnections.filter(item => item.status === 'accepted' && [item.requesterCompanyId, item.targetCompanyId].includes(company.id)).length,
+      portfolioProjects: store.portfolioProjects.filter(item => item.companyId === company.id).length,
+      credentials: store.credentials.filter(item => item.companyId === company.id).length,
+      rating: ratings.overallRating,
+      reviewCount: ratings.count,
+      profileCompletion: Math.round((profileValues / Object.keys(profileFields).length) * 100)
+    };
+  }).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const jobs = store.jobs.map(job => ({
+    ...job,
+    postingCompany: pub(companyById(store, job.postingCompanyId)),
+    awardedCompany: job.awardedCompanyId ? pub(companyById(store, job.awardedCompanyId)) : null,
+    bidCount: store.bids.filter(item => item.jobId === job.id && item.status !== 'withdrawn').length
+  })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  const activity = [
+    ...store.users.map(item => ({ id: item.id, type: 'account', title: 'Account created', detail: item.email, createdAt: item.createdAt })),
+    ...store.jobs.map(item => ({ id: item.id, type: 'job', title: 'Job posted', detail: `${item.title} by ${companyById(store, item.postingCompanyId)?.name || 'Unknown company'}`, createdAt: item.createdAt })),
+    ...store.bids.map(item => ({ id: item.id, type: 'bid', title: 'Bid submitted', detail: `${companyById(store, item.biddingCompanyId)?.name || 'Unknown company'} on ${store.jobs.find(job => job.id === item.jobId)?.title || 'Unknown job'}`, createdAt: item.createdAt })),
+    ...store.messages.map(item => ({ id: item.id, type: 'message', title: 'Message sent', detail: `${item.senderName || 'A user'} sent a marketplace message`, createdAt: item.createdAt })),
+    ...store.reviews.map(item => ({ id: item.id, type: 'review', title: 'Review submitted', detail: `${item.overallRating}-star review for ${companyById(store, item.reviewedCompanyId)?.name || 'Unknown company'}`, createdAt: item.createdAt }))
+  ].filter(item => item.createdAt).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100);
+  const contractors = store.companies.filter(item => item.capabilities?.includes('contractor')).length;
+  const subcontractors = store.companies.filter(item => item.capabilities?.includes('subcontractor')).length;
+  return {
+    owner: { fullName: context.user.fullName, email: context.user.email },
+    generatedAt: now(),
+    system: { persistentStorage, storageProvider: process.env.RAILWAY_VOLUME_MOUNT_PATH ? 'Railway volume' : process.env.DATA_DIR ? 'Configured directory' : 'Temporary filesystem', activeSessions: liveSessions.length },
+    metrics: {
+      users: store.users.length, companies: store.companies.length, contractors, subcontractors,
+      dualRoleCompanies: store.companies.filter(item => item.capabilities?.includes('contractor') && item.capabilities?.includes('subcontractor')).length,
+      publishedJobs: store.jobs.filter(item => item.status === 'published').length,
+      awardedJobs: store.jobs.filter(item => item.status === 'awarded').length,
+      completedJobs: store.jobs.filter(item => ['completed', 'closed'].includes(item.status)).length,
+      bids: store.bids.length, conversations: store.conversations.length, messages: store.messages.length,
+      acceptedConnections: store.networkConnections.filter(item => item.status === 'accepted').length,
+      reviews: store.reviews.length, credentials: store.credentials.length, portfolioProjects: store.portfolioProjects.length
+    },
+    breakdowns: {
+      locations: countBy(store.companies, item => [item.city, item.state].filter(Boolean).join(', ')),
+      trades: countBy(store.companies.flatMap(company => company.trades || []).map(trade => ({ trade })), 'trade'),
+      jobStatuses: countBy(store.jobs, 'status'),
+      jobTrades: countBy(store.jobs, 'trade')
+    },
+    companies, jobs, activity
+  };
+}
 
 // ---- API router ------------------------------------------------------------
 async function api(req, res, url) {
@@ -179,6 +255,12 @@ async function api(req, res, url) {
     // Public, unauthenticated routes.
     if (req.method === 'GET' && p === '/api/public-config') return json(res, 200, { googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', trades });
     if (req.method === 'GET' && p === '/api/storage/status') return json(res, 200, { persistent: persistentStorage, provider: process.env.RAILWAY_VOLUME_MOUNT_PATH ? 'railway-volume' : process.env.DATA_DIR ? 'configured-directory' : 'temporary-filesystem' });
+
+    if (req.method === 'GET' && p === '/api/admin') {
+      const context = adminAuth(req, res, store);
+      if (!context) return;
+      return json(res, 200, adminDashboard(store, context));
+    }
 
     if (req.method === 'POST' && p === '/api/signup') {
       const b = await body(req);
@@ -672,7 +754,7 @@ async function api(req, res, url) {
 }
 
 // ---- Static + page routes --------------------------------------------------
-const routes = { '/login': '/account.html', '/signup': '/account.html', '/forgot-password': '/account.html', '/reset-password': '/account.html', '/dashboard': '/dashboard.html', '/messages': '/dashboard.html', '/network': '/dashboard.html', '/jobs': '/dashboard.html', '/profile': '/dashboard.html', '/calendar': '/dashboard.html', '/notifications': '/dashboard.html' };
+const routes = { '/login': '/account.html', '/signup': '/account.html', '/forgot-password': '/account.html', '/reset-password': '/account.html', '/dashboard': '/dashboard.html', '/messages': '/dashboard.html', '/network': '/dashboard.html', '/jobs': '/dashboard.html', '/profile': '/dashboard.html', '/calendar': '/dashboard.html', '/notifications': '/dashboard.html', '/admin': '/admin.html' };
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
@@ -685,7 +767,7 @@ const server = http.createServer((req, res) => {
   fs.stat(file, (error, stats) => {
     if (error || !stats.isFile()) return send(res, 404, 'Not found');
     const extension = path.extname(file).toLowerCase();
-    res.writeHead(200, { ...headers, 'Content-Type': types[extension] || 'application/octet-stream', 'Cache-Control': extension === '.html' ? 'no-cache' : 'public, max-age=3600' });
+    res.writeHead(200, { ...headers, 'Content-Type': types[extension] || 'application/octet-stream', 'Cache-Control': ['.html', '.js', '.css'].includes(extension) ? 'no-cache' : 'public, max-age=3600' });
     fs.createReadStream(file).pipe(res);
   });
 });

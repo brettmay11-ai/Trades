@@ -18,6 +18,10 @@ The deployed application includes:
 
 Open `/signup`, `/login`, `/dashboard`, or `/network` on the deployed application to use the account and network flows.
 
+## Owner console
+
+The protected owner console at `/admin` provides platform-wide user, company, marketplace, location, trade, job, bid, review, messaging, and activity metrics. Configure `TRADES_ADMIN_EMAILS` as a comma-separated list of trusted owner account email addresses. Those users sign in through the normal Trades login page before opening `/admin`.
+
 ## Launch scope
 
 - Initial operating market: Dallas-Fort Worth
