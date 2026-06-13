@@ -20,7 +20,9 @@ Open `/signup`, `/login`, `/dashboard`, or `/network` on the deployed applicatio
 
 ## Owner console
 
-The protected owner console at `/admin` provides platform-wide user, company, marketplace, location, trade, job, bid, review, messaging, and activity metrics. Configure `TRADES_ADMIN_EMAILS` as a comma-separated list of trusted owner account email addresses. Those users sign in through the normal Trades login page before opening `/admin`.
+The protected owner console at `/admin` provides platform-wide user, company, marketplace, location, trade, job, bid, review, messaging, and activity metrics. Configure `TRADES_ADMIN_EMAILS` as a comma-separated list of trusted owner email addresses. Owners use the dedicated magic-link page at `/admin/login`; these one-time links expire after 15 minutes and create an isolated 12-hour admin session.
+
+Real magic-link delivery uses Resend. Configure `RESEND_API_KEY`, plus an optional verified sender in `ADMIN_MAGIC_FROM_EMAIL` and the deployed URL in `APP_BASE_URL`.
 
 ## Launch scope
 

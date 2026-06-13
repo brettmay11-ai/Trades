@@ -12,8 +12,11 @@ const dataRoot = path.resolve(process.env.DATA_DIR || process.env.RAILWAY_VOLUME
 const dataFile = path.join(dataRoot, 'store.json');
 const sessionHours = 336;
 const resetMinutes = 30;
+const adminMagicMinutes = 15;
+const adminSessionHours = 12;
 const persistentStorage = Boolean(process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH);
 const adminEmails = new Set(String(process.env.TRADES_ADMIN_EMAILS || process.env.ADMIN_EMAILS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
+const appBaseUrl = String(process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || 'https://trades-production-2d0c.up.railway.app').replace(/\/+$/, '');
 
 const trades = ['Framing and Rough Carpentry', 'Electrical', 'HVAC and Refrigeration', 'Concrete, Formwork, and Rebar', 'Plumbing', 'Drywall and Finishing', 'Painting and Coatings', 'Masonry, Brick, and Stone', 'Roofing', 'Excavation, Grading, and Sitework', 'Demolition', 'Insulation', 'Flooring and Tile', 'Finish Carpentry, Cabinets, and Millwork', 'Siding, Stucco, and Exterior Finishes', 'Windows, Doors, Glass, and Glazing', 'Landscaping and Irrigation', 'Fencing and Gates', 'Low-Voltage, Data, Security, and Access Control', 'Welding, Structural Steel, and Miscellaneous Metals', 'Waterproofing, Gutters, and Drainage', 'Cleaning, Hauling, and Final Jobsite Cleanup'];
 const tradeAliases = { framing: 'Framing and Rough Carpentry', carpentry: 'Framing and Rough Carpentry', hvac: 'HVAC and Refrigeration', concrete: 'Concrete, Formwork, and Rebar', drywall: 'Drywall and Finishing', painting: 'Painting and Coatings', masonry: 'Masonry, Brick, and Stone', excavation: 'Excavation, Grading, and Sitework', flooring: 'Flooring and Tile', tile: 'Flooring and Tile', 'stone and tile': 'Flooring and Tile', 'finish carpentry': 'Finish Carpentry, Cabinets, and Millwork', cabinetry: 'Finish Carpentry, Cabinets, and Millwork', siding: 'Siding, Stucco, and Exterior Finishes', 'doors and windows': 'Windows, Doors, Glass, and Glazing', 'glass and glazing': 'Windows, Doors, Glass, and Glazing', landscaping: 'Landscaping and Irrigation', fencing: 'Fencing and Gates', welding: 'Welding, Structural Steel, and Miscellaneous Metals', 'structural steel': 'Welding, Structural Steel, and Miscellaneous Metals', 'metal fabrication': 'Welding, Structural Steel, and Miscellaneous Metals', waterproofing: 'Waterproofing, Gutters, and Drainage', gutters: 'Waterproofing, Gutters, and Drainage', cleaning: 'Cleaning, Hauling, and Final Jobsite Cleanup', 'general labor': 'Cleaning, Hauling, and Final Jobsite Cleanup' };
@@ -32,7 +35,7 @@ const headers = {
 
 // ---- Storage ---------------------------------------------------------------
 function blank() {
-  return { users: [], companies: [], memberships: [], sessions: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [] };
+  return { users: [], companies: [], memberships: [], sessions: [], adminSessions: [], adminMagicLinks: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [] };
 }
 function ensure() {
   fs.mkdirSync(dataRoot, { recursive: true });
@@ -97,6 +100,9 @@ function json(res, status, value, extra = {}) { send(res, status, JSON.stringify
 function cookie(token, age = sessionHours * 3600) {
   return `trades_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
 }
+function adminCookie(token, age = adminSessionHours * 3600) {
+  return `trades_admin_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+}
 
 // ---- Domain helpers --------------------------------------------------------
 function pub(company) {
@@ -114,13 +120,15 @@ function ctx(req, store) {
   return user && company ? { user, company, membership } : null;
 }
 function auth(req, res, store) { const context = ctx(req, store); if (!context) json(res, 401, { error: 'Sign in required' }); return context; }
+function adminCtx(req, store) {
+  const session = store.adminSessions.find(item => item.token === cookies(req).trades_admin_session && item.expiresAt > now());
+  if (!session || !adminEmails.has(session.email)) return null;
+  const user = store.users.find(item => item.email === session.email);
+  return { email: session.email, fullName: user?.fullName || 'Trades Owner', session };
+}
 function adminAuth(req, res, store) {
-  const context = auth(req, res, store);
-  if (!context) return null;
-  if (context.user.platformRole !== 'admin' && !adminEmails.has(context.user.email)) {
-    json(res, 403, { error: 'Trades owner access required.' });
-    return null;
-  }
+  const context = adminCtx(req, store);
+  if (!context) json(res, 401, { error: 'Admin sign in required.' });
   return context;
 }
 function companyById(store, id) { return store.companies.find(item => item.id === id); }
@@ -180,6 +188,23 @@ function calendarIcs(store, job, companyId) {
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Trades//Shared Project Calendar//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT', `UID:${job.id}@trades.app`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`, `DTSTART;VALUE=DATE:${compact(job.startDate)}`, `DTEND;VALUE=DATE:${compact(addDay(job.endDate))}`, `SUMMARY:${icsEscape(job.title)}`, `DESCRIPTION:${icsEscape(`${job.trade} project with ${event.partnerCompany.name}. ${job.calendarNotes || job.description || ''}`)}`, `LOCATION:${icsEscape(`${job.city}, ${job.state}`)}`, 'END:VEVENT', 'END:VCALENDAR', ''].join('\r\n');
 }
 function validUrl(value) { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url.toString() : ''; } catch { return ''; } }
+async function sendAdminMagicLink(recipient, link, requestId) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return { sent: false, reason: 'not_configured' };
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'Idempotency-Key': requestId },
+    body: JSON.stringify({
+      from: process.env.ADMIN_MAGIC_FROM_EMAIL || 'Trades <onboarding@resend.dev>',
+      to: [recipient],
+      subject: 'Your Trades owner sign-in link',
+      html: `<div style="font-family:Arial,sans-serif;color:#17231d;max-width:560px;margin:auto;padding:30px"><h1 style="margin:0 0 16px">Open your Trades owner console</h1><p style="line-height:1.6">Use the secure button below to sign in. This link expires in ${adminMagicMinutes} minutes and can only be used once.</p><p style="margin:28px 0"><a href="${link}" style="display:inline-block;padding:13px 20px;border-radius:7px;color:#fff;background:#ed6a2c;text-decoration:none;font-weight:bold">Open owner console</a></p><p style="color:#69736c;font-size:12px;line-height:1.6">If you did not request this link, you can safely ignore this email.</p></div>`,
+      text: `Open your Trades owner console: ${link}\n\nThis link expires in ${adminMagicMinutes} minutes and can only be used once.`
+    })
+  });
+  if (!response.ok) throw Error(`Admin magic-link email failed with status ${response.status}.`);
+  return { sent: true };
+}
 function countBy(items, key) {
   return Object.entries(items.reduce((counts, item) => {
     const value = typeof key === 'function' ? key(item) : item[key];
@@ -224,7 +249,7 @@ function adminDashboard(store, context) {
   const contractors = store.companies.filter(item => item.capabilities?.includes('contractor')).length;
   const subcontractors = store.companies.filter(item => item.capabilities?.includes('subcontractor')).length;
   return {
-    owner: { fullName: context.user.fullName, email: context.user.email },
+    owner: { fullName: context.fullName, email: context.email },
     generatedAt: now(),
     system: { persistentStorage, storageProvider: process.env.RAILWAY_VOLUME_MOUNT_PATH ? 'Railway volume' : process.env.DATA_DIR ? 'Configured directory' : 'Temporary filesystem', activeSessions: liveSessions.length },
     metrics: {
@@ -256,6 +281,55 @@ async function api(req, res, url) {
     if (req.method === 'GET' && p === '/api/public-config') return json(res, 200, { googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', trades });
     if (req.method === 'GET' && p === '/api/storage/status') return json(res, 200, { persistent: persistentStorage, provider: process.env.RAILWAY_VOLUME_MOUNT_PATH ? 'railway-volume' : process.env.DATA_DIR ? 'configured-directory' : 'temporary-filesystem' });
 
+    if (req.method === 'POST' && p === '/api/admin/magic/request') {
+      const b = await body(req);
+      const requestedEmail = email(b.email);
+      store.adminMagicLinks = store.adminMagicLinks.filter(item => !item.usedAt && item.expiresAt > now());
+      store.adminSessions = store.adminSessions.filter(item => item.expiresAt > now());
+      let magicPath = '';
+      let delivery = process.env.RESEND_API_KEY ? 'email' : 'not_configured';
+      if (adminEmails.has(requestedEmail)) {
+        const recent = store.adminMagicLinks.find(item => item.email === requestedEmail && new Date(item.createdAt).getTime() > Date.now() - 60000);
+        if (!recent) {
+          const raw = crypto.randomBytes(32).toString('hex');
+          const record = { id: uid('adm'), email: requestedEmail, tokenHash: tokenHash(raw), expiresAt: new Date(Date.now() + adminMagicMinutes * 60000).toISOString(), usedAt: null, createdAt: now() };
+          store.adminMagicLinks = store.adminMagicLinks.filter(item => item.email !== requestedEmail);
+          store.adminMagicLinks.push(record);
+          magicPath = `/admin/verify?token=${raw}`;
+          try {
+            const result = await sendAdminMagicLink(requestedEmail, `${appBaseUrl}${magicPath}`, record.id);
+            delivery = result.sent ? 'email' : result.reason;
+          } catch (error) {
+            console.error(error);
+            delivery = 'failed';
+          }
+        } else {
+          delivery = 'rate_limited';
+        }
+      }
+      write(store);
+      return json(res, 200, {
+        message: 'If that email is authorized, a secure owner sign-in link is on its way.',
+        delivery,
+        ...(process.env.ADMIN_MAGIC_LINK_PREVIEW === 'true' && magicPath ? { magicPath } : {})
+      });
+    }
+    if (req.method === 'POST' && p === '/api/admin/magic/verify') {
+      const b = await body(req);
+      const record = store.adminMagicLinks.find(item => item.tokenHash === tokenHash(clean(b.token, 200)) && !item.usedAt && item.expiresAt > now() && adminEmails.has(item.email));
+      if (!record) return json(res, 400, { error: 'This owner sign-in link is invalid or has expired.' });
+      record.usedAt = now();
+      store.adminSessions = store.adminSessions.filter(item => item.email !== record.email && item.expiresAt > now());
+      const session = { token: crypto.randomBytes(32).toString('hex'), email: record.email, expiresAt: new Date(Date.now() + adminSessionHours * 3600e3).toISOString(), createdAt: now() };
+      store.adminSessions.push(session);
+      write(store);
+      return json(res, 200, { ok: true }, { 'Set-Cookie': adminCookie(session.token) });
+    }
+    if (req.method === 'POST' && p === '/api/admin/logout') {
+      store.adminSessions = store.adminSessions.filter(item => item.token !== cookies(req).trades_admin_session);
+      write(store);
+      return json(res, 200, { ok: true }, { 'Set-Cookie': adminCookie('', 0) });
+    }
     if (req.method === 'GET' && p === '/api/admin') {
       const context = adminAuth(req, res, store);
       if (!context) return;
@@ -754,7 +828,7 @@ async function api(req, res, url) {
 }
 
 // ---- Static + page routes --------------------------------------------------
-const routes = { '/login': '/account.html', '/signup': '/account.html', '/forgot-password': '/account.html', '/reset-password': '/account.html', '/dashboard': '/dashboard.html', '/messages': '/dashboard.html', '/network': '/dashboard.html', '/jobs': '/dashboard.html', '/profile': '/dashboard.html', '/calendar': '/dashboard.html', '/notifications': '/dashboard.html', '/admin': '/admin.html' };
+const routes = { '/login': '/account.html', '/signup': '/account.html', '/forgot-password': '/account.html', '/reset-password': '/account.html', '/dashboard': '/dashboard.html', '/messages': '/dashboard.html', '/network': '/dashboard.html', '/jobs': '/dashboard.html', '/profile': '/dashboard.html', '/calendar': '/dashboard.html', '/notifications': '/dashboard.html', '/admin': '/admin.html', '/admin/login': '/admin-login.html', '/admin/verify': '/admin-login.html' };
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Owner Sign In | Trades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=20260613-admin2">
+  <link rel="stylesheet" href="/admin-login.css?v=20260613-admin2">
+</head>
+<body class="admin-login-body">
+  <header><a class="brand brand-light" href="/"><span class="brand-mark"><span></span><span></span><span></span></span><span>TRADES</span></a><a href="/">Back to Home</a></header>
+  <main class="admin-login-shell">
+    <section class="admin-login-story"><span class="kicker">Private owner access</span><h1>Run the marketplace.<br><em>See the whole picture.</em></h1><p>This secure console is separate from contractor and subcontractor accounts. Access is limited to authorized Trades owners.</p><ul><li>One-time links expire after 15 minutes</li><li>No password is required</li><li>Admin sessions are isolated from marketplace accounts</li></ul></section>
+    <section class="admin-login-panel">
+      <div class="admin-login-card">
+        <div id="requestView">
+          <span class="kicker">Owner console</span><h2>Sign in with a magic link.</h2><p>Enter your authorized owner email. We will send a secure, one-time link.</p>
+          <form id="magicForm"><label><span>Owner email</span><input name="email" type="email" autocomplete="email" required placeholder="you@company.com"></label><button class="button button-orange button-full" type="submit" data-loading="Sending secure link...">Send magic link</button></form>
+        </div>
+        <div id="verifyView" hidden><span class="kicker">Secure verification</span><h2>Opening the owner console...</h2><p id="verifyMessage">Verifying your one-time sign-in link.</p><div class="admin-loader"><span></span><span></span><span></span></div></div>
+        <div class="admin-login-notice" id="adminLoginNotice" hidden></div>
+      </div>
+    </section>
+  </main>
+  <script src="/admin-login.js?v=20260613-admin2"></script>
+</body>
+</html>
