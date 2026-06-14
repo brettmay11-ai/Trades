@@ -16,7 +16,8 @@ const adminMagicMinutes = 15;
 const adminSessionHours = 12;
 const persistentStorage = Boolean(process.env.DATA_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH);
 const adminEmails = new Set(String(process.env.TRADES_ADMIN_EMAILS || process.env.ADMIN_EMAILS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean));
-const appBaseUrl = String(process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || 'https://trades-production-2d0c.up.railway.app').replace(/\/+$/, '');
+const appBaseUrl = String(process.env.APP_BASE_URL || process.env.PUBLIC_APP_URL || 'https://findtrades.co').replace(/\/+$/, '');
+const mailFrom = process.env.TRADES_FROM_EMAIL || 'Trades <no-reply@findtrades.co>';
 
 const trades = ['Framing and Rough Carpentry', 'Electrical', 'HVAC and Refrigeration', 'Concrete, Formwork, and Rebar', 'Plumbing', 'Drywall and Finishing', 'Painting and Coatings', 'Masonry, Brick, and Stone', 'Roofing', 'Excavation, Grading, and Sitework', 'Demolition', 'Insulation', 'Flooring and Tile', 'Finish Carpentry, Cabinets, and Millwork', 'Siding, Stucco, and Exterior Finishes', 'Windows, Doors, Glass, and Glazing', 'Landscaping and Irrigation', 'Fencing and Gates', 'Low-Voltage, Data, Security, and Access Control', 'Welding, Structural Steel, and Miscellaneous Metals', 'Waterproofing, Gutters, and Drainage', 'Cleaning, Hauling, and Final Jobsite Cleanup'];
 const tradeAliases = { framing: 'Framing and Rough Carpentry', carpentry: 'Framing and Rough Carpentry', hvac: 'HVAC and Refrigeration', concrete: 'Concrete, Formwork, and Rebar', drywall: 'Drywall and Finishing', painting: 'Painting and Coatings', masonry: 'Masonry, Brick, and Stone', excavation: 'Excavation, Grading, and Sitework', flooring: 'Flooring and Tile', tile: 'Flooring and Tile', 'stone and tile': 'Flooring and Tile', 'finish carpentry': 'Finish Carpentry, Cabinets, and Millwork', cabinetry: 'Finish Carpentry, Cabinets, and Millwork', siding: 'Siding, Stucco, and Exterior Finishes', 'doors and windows': 'Windows, Doors, Glass, and Glazing', 'glass and glazing': 'Windows, Doors, Glass, and Glazing', landscaping: 'Landscaping and Irrigation', fencing: 'Fencing and Gates', welding: 'Welding, Structural Steel, and Miscellaneous Metals', 'structural steel': 'Welding, Structural Steel, and Miscellaneous Metals', 'metal fabrication': 'Welding, Structural Steel, and Miscellaneous Metals', waterproofing: 'Waterproofing, Gutters, and Drainage', gutters: 'Waterproofing, Gutters, and Drainage', cleaning: 'Cleaning, Hauling, and Final Jobsite Cleanup', 'general labor': 'Cleaning, Hauling, and Final Jobsite Cleanup' };
@@ -199,9 +200,25 @@ function searchMatches(search, job, company) {
 }
 
 // Notifications.
+function companyEmail(store, companyId) {
+  const membership = store.memberships.find(item => item.companyId === companyId);
+  const user = store.users.find(item => item.id === membership?.userId);
+  return user?.email || '';
+}
+function notificationEmail(notification) {
+  const url = `${appBaseUrl}${notification.path || '/dashboard'}`;
+  const html = emailLayout(notification.title, `<p style="line-height:1.6">${escapeHtml(notification.message)}</p>`, 'Open Trades', url);
+  return { subject: notification.title, html, text: `${notification.title}\n\n${notification.message}\n\nOpen Trades: ${url}` };
+}
 function notify(store, companyId, type, title, message, pathValue = '', sourceId = '') {
   if (sourceId && store.notifications.some(item => item.companyId === companyId && item.type === type && item.sourceId === sourceId)) return;
-  store.notifications.push({ id: uid('not'), companyId, type, title, message, path: pathValue, sourceId, readAt: null, createdAt: now() });
+  const notification = { id: uid('not'), companyId, type, title, message, path: pathValue, sourceId, readAt: null, createdAt: now() };
+  store.notifications.push(notification);
+  const to = companyEmail(store, companyId);
+  if (to) {
+    const payload = notificationEmail(notification);
+    sendEmail({ to, subject: payload.subject, html: payload.html, text: payload.text, idempotencyKey: notification.id }).catch(error => console.error('Notification email failed', error));
+  }
 }
 
 // Reviews + calendar.
@@ -228,22 +245,26 @@ function calendarIcs(store, job, companyId) {
   return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Trades//Shared Project Calendar//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT', `UID:${job.id}@trades.app`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`, `DTSTART;VALUE=DATE:${compact(job.startDate)}`, `DTEND;VALUE=DATE:${compact(addDay(job.endDate))}`, `SUMMARY:${icsEscape(job.title)}`, `DESCRIPTION:${icsEscape(`${job.trade} project with ${event.partnerCompany.name}. ${job.calendarNotes || job.description || ''}`)}`, `LOCATION:${icsEscape(`${job.city}, ${job.state}`)}`, 'END:VEVENT', 'END:VCALENDAR', ''].join('\r\n');
 }
 function validUrl(value) { try { const url = new URL(value); return ['http:', 'https:'].includes(url.protocol) ? url.toString() : ''; } catch { return ''; } }
-async function sendAdminMagicLink(recipient, link, requestId) {
+function escapeHtml(value) { return String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function emailLayout(heading, bodyHtml, buttonLabel, buttonUrl) {
+  return `<div style="font-family:Arial,sans-serif;color:#17231d;max-width:560px;margin:auto;padding:30px"><h1 style="margin:0 0 16px;font-size:22px">${escapeHtml(heading)}</h1>${bodyHtml}<p style="margin:28px 0"><a href="${buttonUrl}" style="display:inline-block;padding:13px 20px;border-radius:7px;color:#fff;background:#ed6a2c;text-decoration:none;font-weight:bold">${escapeHtml(buttonLabel)}</a></p><p style="color:#69736c;font-size:12px;line-height:1.6">You're receiving this because you have a Trades account at ${escapeHtml(appBaseUrl)}.</p></div>`;
+}
+// Generic transactional email through Resend. No-ops cleanly when no API key is configured.
+async function sendEmail({ to, subject, html, text, from = mailFrom, idempotencyKey }) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { sent: false, reason: 'not_configured' };
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'Idempotency-Key': requestId },
-    body: JSON.stringify({
-      from: process.env.ADMIN_MAGIC_FROM_EMAIL || 'Trades <onboarding@resend.dev>',
-      to: [recipient],
-      subject: 'Your Trades owner sign-in link',
-      html: `<div style="font-family:Arial,sans-serif;color:#17231d;max-width:560px;margin:auto;padding:30px"><h1 style="margin:0 0 16px">Open your Trades owner console</h1><p style="line-height:1.6">Use the secure button below to sign in. This link expires in ${adminMagicMinutes} minutes and can only be used once.</p><p style="margin:28px 0"><a href="${link}" style="display:inline-block;padding:13px 20px;border-radius:7px;color:#fff;background:#ed6a2c;text-decoration:none;font-weight:bold">Open owner console</a></p><p style="color:#69736c;font-size:12px;line-height:1.6">If you did not request this link, you can safely ignore this email.</p></div>`,
-      text: `Open your Trades owner console: ${link}\n\nThis link expires in ${adminMagicMinutes} minutes and can only be used once.`
-    })
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) },
+    body: JSON.stringify({ from, to: [to], subject, html, text })
   });
-  if (!response.ok) throw Error(`Admin magic-link email failed with status ${response.status}.`);
+  if (!response.ok) throw Error(`Email send failed with status ${response.status}.`);
   return { sent: true };
+}
+function sendAdminMagicLink(recipient, link, requestId) {
+  const html = emailLayout('Open your Trades owner console', `<p style="line-height:1.6">Use the secure button below to sign in. This link expires in ${adminMagicMinutes} minutes and can only be used once.</p><p style="color:#69736c;font-size:12px;line-height:1.6">If you did not request this link, you can safely ignore this email.</p>`, 'Open owner console', link);
+  const text = `Open your Trades owner console: ${link}\n\nThis link expires in ${adminMagicMinutes} minutes and can only be used once.`;
+  return sendEmail({ to: recipient, subject: 'Your Trades owner sign-in link', html, text, from: process.env.ADMIN_MAGIC_FROM_EMAIL || mailFrom, idempotencyKey: requestId });
 }
 function countBy(items, key) {
   return Object.entries(items.reduce((counts, item) => {
@@ -479,11 +500,20 @@ async function api(req, res, url) {
       if (user) {
         store.passwordResetTokens = store.passwordResetTokens.filter(item => item.userId !== user.id);
         const raw = crypto.randomBytes(32).toString('hex');
-        store.passwordResetTokens.push({ id: uid('rst'), userId: user.id, tokenHash: tokenHash(raw), expiresAt: new Date(Date.now() + resetMinutes * 60000).toISOString(), usedAt: null, createdAt: now() });
+        const record = { id: uid('rst'), userId: user.id, tokenHash: tokenHash(raw), expiresAt: new Date(Date.now() + resetMinutes * 60000).toISOString(), usedAt: null, createdAt: now() };
+        store.passwordResetTokens.push(record);
         resetPath = `/reset-password?token=${raw}`;
+        if (process.env.RESEND_API_KEY) {
+          const link = `${appBaseUrl}${resetPath}`;
+          const html = emailLayout('Reset your Trades password', `<p style="line-height:1.6">We received a request to reset your password. This link expires in ${resetMinutes} minutes and can only be used once.</p><p style="color:#69736c;font-size:12px;line-height:1.6">If you did not request this, you can safely ignore this email and your password will stay the same.</p>`, 'Reset password', link);
+          const text = `Reset your Trades password: ${link}\n\nThis link expires in ${resetMinutes} minutes and can only be used once. If you did not request this, you can ignore this email.`;
+          try { await sendEmail({ to: user.email, subject: 'Reset your Trades password', html, text, idempotencyKey: record.id }); }
+          catch (error) { console.error('Password reset email failed', error); }
+        }
       }
       write(store);
-      return json(res, 200, { message: 'If an account exists for that email, a password reset link is ready.', resetPath, delivery: process.env.PASSWORD_RESET_EMAIL_ENABLED === 'true' ? 'email' : 'preview' });
+      const emailConfigured = Boolean(process.env.RESEND_API_KEY);
+      return json(res, 200, { message: 'If an account exists for that email, a password reset link is ready.', delivery: emailConfigured ? 'email' : 'preview', ...(emailConfigured ? {} : { resetPath }) });
     }
     if (req.method === 'POST' && p === '/api/password/reset') {
       const b = await body(req);
@@ -571,6 +601,7 @@ async function api(req, res, url) {
       let bid = store.bids.find(item => item.jobId === job.id && item.biddingCompanyId === context.company.id);
       if (bid) Object.assign(bid, { amount, scope, schedule: clean(b.schedule, 200), status: 'submitted', updatedAt: now() });
       else { bid = { id: uid('bid'), jobId: job.id, biddingCompanyId: context.company.id, submittedByUserId: context.user.id, amount, scope, schedule: clean(b.schedule, 200), status: 'submitted', createdAt: now(), updatedAt: now() }; store.bids.push(bid); }
+      notify(store, job.postingCompanyId, 'bid_received', 'New bid received', `${context.company.name} submitted a bid on ${job.title}.`, '/jobs', bid.id);
       write(store);
       return json(res, 201, { bid });
     }
