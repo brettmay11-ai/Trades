@@ -6,7 +6,7 @@ const root=path.join(__dirname,'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 
 test('messages workspace includes inbox filters, project context, and improved composer',()=>{
-  const html=read('prototype/dashboard.html'),script=read('prototype/messages-v2.js'),jobs=read('prototype/jobs.js'),styles=read('prototype/messages.css');
+  const html=read('prototype/dashboard.html'),script=read('prototype/messages-v2.js'),jobs=read('prototype/jobs.js'),styles=read('prototype/messages.css'),polish=read('prototype/layout-polish.css');
   assert.match(html,/conversationSearch/);
   assert.match(html,/data-message-filter="unread"/);
   assert.match(html,/messageHeaderActions/);
@@ -15,6 +15,7 @@ test('messages workspace includes inbox filters, project context, and improved c
   assert.match(jobs,/data-message-job-context/);
   assert.match(jobs,/startConversation\(button\.dataset\.messageBid,button\.dataset\.messageJobContext\)/);
   assert.match(styles,/\.conversation-item\.active/);
+  assert.match(polish,/\.message-form>\.button\{height:46px;min-height:46px;align-self:start\}/);
 });
 
 test('server keeps job conversations separate and enriches their context',()=>{
