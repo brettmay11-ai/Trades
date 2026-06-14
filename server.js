@@ -159,6 +159,10 @@ function adminAuth(req, res, store) {
 }
 function companyById(store, id) { return store.companies.find(item => item.id === id); }
 function conv(store, id, companyId) { return store.conversations.find(item => item.id === id && item.companyIds.includes(companyId)); }
+function conversationJob(store, conversation) {
+  const job = store.jobs.find(item => item.id === conversation.jobId);
+  return job ? { id: job.id, title: job.title, trade: job.trade, city: job.city, state: job.state, status: job.status } : null;
+}
 function connection(store, a, b) { return store.networkConnections.find(item => [item.requesterCompanyId, item.targetCompanyId].includes(a) && [item.requesterCompanyId, item.targetCompanyId].includes(b)); }
 function enrichNet(store, item, companyId) { const otherId = item.requesterCompanyId === companyId ? item.targetCompanyId : item.requesterCompanyId; return { ...item, direction: item.requesterCompanyId === companyId ? 'outgoing' : 'incoming', otherCompany: pub(companyById(store, otherId)) }; }
 function enrichRef(store, item, companyId) { const otherId = item.fromCompanyId === companyId ? item.toCompanyId : item.fromCompanyId; return { ...item, direction: item.fromCompanyId === companyId ? 'outgoing' : 'incoming', otherCompany: pub(companyById(store, otherId)) }; }
@@ -506,8 +510,8 @@ async function api(req, res, url) {
         const other = companyById(store, item.companyIds.find(id => id !== company.id));
         const messages = store.messages.filter(message => message.conversationId === item.id);
         const last = messages.at(-1);
-        return { ...item, otherCompany: pub(other), lastMessage: last ? { body: last.body, createdAt: last.createdAt } : null, unread: messages.filter(message => message.senderCompanyId !== company.id && !message.readByCompanyIds.includes(company.id)).length };
-      });
+        return { ...item, job: conversationJob(store, item), otherCompany: pub(other), lastMessage: last ? { body: last.body, createdAt: last.createdAt } : null, unread: messages.filter(message => message.senderCompanyId !== company.id && !message.readByCompanyIds.includes(company.id)).length };
+      }).sort((a, b) => new Date(b.lastMessage?.createdAt || b.createdAt) - new Date(a.lastMessage?.createdAt || a.createdAt));
       const connections = store.networkConnections.filter(item => [item.requesterCompanyId, item.targetCompanyId].includes(company.id)).map(item => enrichNet(store, item, company.id));
       const referrals = store.referrals.filter(item => [item.fromCompanyId, item.toCompanyId].includes(company.id)).map(item => enrichRef(store, item, company.id));
       const radius = company.serviceRadius || 50;
@@ -811,8 +815,9 @@ async function api(req, res, url) {
       const b = await body(req);
       const other = companyById(store, b.companyId);
       if (!other || other.id === context.company.id) return json(res, 400, { error: 'Choose another company.' });
-      let conversation = store.conversations.find(item => item.companyIds.includes(context.company.id) && item.companyIds.includes(other.id));
-      if (!conversation) { conversation = { id: uid('cnv'), companyIds: [context.company.id, other.id], jobId: clean(b.jobId, 100) || null, createdAt: now() }; store.conversations.push(conversation); write(store); }
+      const jobId = clean(b.jobId, 100) || null;
+      let conversation = store.conversations.find(item => item.companyIds.includes(context.company.id) && item.companyIds.includes(other.id) && (item.jobId || null) === jobId);
+      if (!conversation) { conversation = { id: uid('cnv'), companyIds: [context.company.id, other.id], jobId, createdAt: now() }; store.conversations.push(conversation); write(store); }
       return json(res, 201, { conversation, otherCompany: pub(other) });
     }
     const conversationMessages = p.match(/^\/api\/conversations\/([^/]+)\/messages$/);
@@ -823,7 +828,7 @@ async function api(req, res, url) {
       if (!conversation) return json(res, 404, { error: 'Conversation not found.' });
       store.messages.filter(item => item.conversationId === conversation.id && item.senderCompanyId !== context.company.id).forEach(item => { if (!item.readByCompanyIds.includes(context.company.id)) item.readByCompanyIds.push(context.company.id); });
       write(store);
-      return json(res, 200, { conversation, otherCompany: pub(companyById(store, conversation.companyIds.find(id => id !== context.company.id))), messages: store.messages.filter(item => item.conversationId === conversation.id) });
+      return json(res, 200, { conversation, job: conversationJob(store, conversation), otherCompany: pub(companyById(store, conversation.companyIds.find(id => id !== context.company.id))), messages: store.messages.filter(item => item.conversationId === conversation.id) });
     }
     if (conversationMessages && req.method === 'POST') {
       const context = auth(req, res, store);
