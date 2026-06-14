@@ -5,7 +5,6 @@ const CITY_COORDINATES={'arlington,tx':[32.7357,-97.1081],'austin,tx':[30.2672,-
 const LOCATION_FIELDS=['placeId','formattedLocation','postalCode','latitude','longitude'];
 
 function canonicalTrade(value){const normalized=String(value||'').trim().toLowerCase();return TRADE_OPTIONS.find(option=>option.toLowerCase()===normalized)||TRADE_ALIASES[normalized]||''}
-function addList(id,values){if(document.getElementById(id))return;const list=document.createElement('datalist');list.id=id;list.innerHTML=values.map(value=>`<option value="${value}"></option>`).join('');document.body.appendChild(list)}
 function stateField(input){const scope=input.closest('form,fieldset,.form-row,.location-settings')||document;return scope.querySelector('[name="state"],#jobStateFilter')}
 function locationScope(input){return input.closest('form')||input.parentElement||document}
 function ensureLocationFields(input){
@@ -32,9 +31,77 @@ function applyCity(cityInput,description){
   setLocationMetadata(cityInput,{formattedLocation:`${city}, ${String(state||'').toUpperCase()}`,latitude:coordinates?.[0]??'',longitude:coordinates?.[1]??''});
   cityInput.dispatchEvent(new Event('input',{bubbles:true}));
 }
+function enableSuggestionMenu(input,options,{label='Option',onSelect}={}){
+  if(input.dataset.suggestionReady)return;
+  input.dataset.suggestionReady='true';
+  input.removeAttribute('list');
+  input.setAttribute('autocomplete','off');
+  input.setAttribute('aria-autocomplete','list');
+  input.setAttribute('aria-expanded','false');
+  const wrap=document.createElement('div'),menu=document.createElement('div');
+  wrap.className='trades-suggestion-wrap';
+  menu.className='trades-suggestion-menu';
+  menu.setAttribute('role','listbox');
+  input.parentNode.insertBefore(wrap,input);
+  wrap.append(input,menu);
+  let visible=[],active=-1;
+  function render(query=''){
+    const normalized=String(query).trim().toLowerCase();
+    visible=options.filter(value=>!normalized||value.toLowerCase().includes(normalized));
+    active=-1;
+    menu.innerHTML=visible.length?visible.map((value,index)=>`<button type="button" role="option" data-suggestion-index="${index}"><span>${value}</span><small>${label}</small></button>`).join(''):'<p>No matching options. Try a different search.</p>';
+  }
+  function open(showAll=false){
+    render(showAll?'':input.value);
+    menu.classList.add('open');
+    wrap.classList.add('open');
+    input.setAttribute('aria-expanded','true');
+  }
+  function close(){
+    menu.classList.remove('open');
+    wrap.classList.remove('open');
+    input.setAttribute('aria-expanded','false');
+    active=-1;
+  }
+  function highlight(index){
+    const buttons=[...menu.querySelectorAll('button')];
+    if(!buttons.length)return;
+    active=(index+buttons.length)%buttons.length;
+    buttons.forEach((button,buttonIndex)=>button.classList.toggle('active',buttonIndex===active));
+    buttons[active].scrollIntoView({block:'nearest'});
+  }
+  function choose(value){
+    input.value=value;
+    onSelect?.(value);
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+    close();
+  }
+  input.addEventListener('focus',()=>open(true));
+  input.addEventListener('click',()=>open(true));
+  input.addEventListener('input',()=>open(false));
+  input.addEventListener('keydown',event=>{
+    if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+      event.preventDefault();
+      if(!menu.classList.contains('open'))open(true);
+      highlight(active+(event.key==='ArrowDown'?1:-1));
+    }else if(event.key==='Enter'&&active>=0){
+      event.preventDefault();
+      choose(visible[active]);
+    }else if(event.key==='Escape'){
+      close();
+    }
+  });
+  menu.addEventListener('mousedown',event=>{
+    const button=event.target.closest('[data-suggestion-index]');
+    if(!button)return;
+    event.preventDefault();
+    choose(visible[Number(button.dataset.suggestionIndex)]);
+  });
+  document.addEventListener('pointerdown',event=>{if(!wrap.contains(event.target))close()});
+}
 function enableFallbackCity(input){
-  input.setAttribute('list','trades-city-options');
   input.placeholder=input.placeholder||'Start typing a city';
+  enableSuggestionMenu(input,CITY_OPTIONS,{label:'City',onSelect:value=>applyCity(input,value)});
   input.addEventListener('change',()=>{const match=CITY_OPTIONS.find(value=>value.toLowerCase()===input.value.trim().toLowerCase());if(match)applyCity(input,match)});
 }
 function enableGoogleCity(input){
@@ -50,10 +117,9 @@ function enableGoogleCity(input){
   });
 }
 function cityInputEvent(input){input.dispatchEvent(new Event('input',{bubbles:true}))}
-function enableSingleTrade(input){if(input.dataset.tradeReady)return;input.dataset.tradeReady='true';input.setAttribute('list','trades-trade-options');input.placeholder=input.placeholder||'Start typing a trade';input.addEventListener('change',()=>{const match=canonicalTrade(input.value);if(match)input.value=match});const form=input.closest('form');if(form&&!form.dataset.tradeValidationReady){form.dataset.tradeValidationReady='true';form.addEventListener('submit',event=>{const fields=[...form.querySelectorAll('[data-trade-picker="single"]')];for(const field of fields){if(field.value&&!canonicalTrade(field.value)){event.preventDefault();event.stopImmediatePropagation();field.setCustomValidity('Select a trade from the standard list.');field.reportValidity();setTimeout(()=>field.setCustomValidity(''),2000);return}field.value=canonicalTrade(field.value)||field.value}},true)}}
-function enableMultiTrade(root){if(root.dataset.tradeReady)return;root.dataset.tradeReady='true';const input=root.querySelector('[data-trade-add]'),hidden=root.querySelector('[name="trades"]'),chips=root.querySelector('[data-trade-chips]');input.setAttribute('list','trades-trade-options');let selected=String(hidden.value||'').split(',').map(canonicalTrade).filter(Boolean);function render(){hidden.value=selected.join(', ');chips.innerHTML=selected.map(trade=>`<button type="button" data-remove-trade="${trade}" aria-label="Remove ${trade}">${trade}<span>&times;</span></button>`).join('');chips.querySelectorAll('[data-remove-trade]').forEach(button=>button.onclick=()=>{selected=selected.filter(trade=>trade!==button.dataset.removeTrade);render()})}function add(){const trade=canonicalTrade(input.value);if(!trade){input.setCustomValidity('Select a trade from the standard list.');input.reportValidity();setTimeout(()=>input.setCustomValidity(''),2000);return}if(!selected.includes(trade))selected.push(trade);input.value='';render()}input.addEventListener('change',add);input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();add()}});render()}
+function enableSingleTrade(input){if(input.dataset.tradeReady)return;input.dataset.tradeReady='true';input.placeholder=input.placeholder||'Start typing a trade';enableSuggestionMenu(input,TRADE_OPTIONS,{label:'Trade',onSelect:value=>{input.value=canonicalTrade(value)}});input.addEventListener('change',()=>{const match=canonicalTrade(input.value);if(match)input.value=match});const form=input.closest('form');if(form&&!form.dataset.tradeValidationReady){form.dataset.tradeValidationReady='true';form.addEventListener('submit',event=>{const fields=[...form.querySelectorAll('[data-trade-picker="single"]')];for(const field of fields){if(field.value&&!canonicalTrade(field.value)){event.preventDefault();event.stopImmediatePropagation();field.setCustomValidity('Select a trade from the standard list.');field.reportValidity();setTimeout(()=>field.setCustomValidity(''),2000);return}field.value=canonicalTrade(field.value)||field.value}},true)}}
+function enableMultiTrade(root){if(root.dataset.tradeReady)return;root.dataset.tradeReady='true';const input=root.querySelector('[data-trade-add]'),hidden=root.querySelector('[name="trades"]'),chips=root.querySelector('[data-trade-chips]');let selected=String(hidden.value||'').split(',').map(canonicalTrade).filter(Boolean);function render(){hidden.value=selected.join(', ');chips.innerHTML=selected.map(trade=>`<button type="button" data-remove-trade="${trade}" aria-label="Remove ${trade}">${trade}<span>&times;</span></button>`).join('');chips.querySelectorAll('[data-remove-trade]').forEach(button=>button.onclick=()=>{selected=selected.filter(trade=>trade!==button.dataset.removeTrade);render()})}function add(value=input.value){const trade=canonicalTrade(value);if(!trade){input.setCustomValidity('Select a trade from the standard list.');input.reportValidity();setTimeout(()=>input.setCustomValidity(''),2000);return}if(!selected.includes(trade))selected.push(trade);input.value='';render()}enableSuggestionMenu(input,TRADE_OPTIONS,{label:'Trade',onSelect:add});input.addEventListener('change',()=>{if(input.value)add()});render()}
 function enhancePickers(root=document){
-  addList('trades-trade-options',TRADE_OPTIONS);addList('trades-city-options',CITY_OPTIONS);
   root.querySelectorAll('[name="trade"],#jobTradeFilter').forEach(input=>{input.dataset.tradePicker='single';enableSingleTrade(input)});
   root.querySelectorAll('[data-trade-picker="multi"]').forEach(enableMultiTrade);
   root.querySelectorAll('[name="city"],#jobCityFilter').forEach(input=>{enableGoogleCity(input);if(input.dataset.cityReady)return;input.dataset.cityReady='true';ensureLocationFields(input);enableFallbackCity(input);input.addEventListener('input',event=>{if(event.isTrusted)clearLocationMetadata(input)})});
