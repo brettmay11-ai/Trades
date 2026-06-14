@@ -35,7 +35,7 @@ const headers = {
 
 // ---- Storage ---------------------------------------------------------------
 function blank() {
-  return { users: [], companies: [], memberships: [], sessions: [], adminSessions: [], adminMagicLinks: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [] };
+  return { users: [], companies: [], memberships: [], sessions: [], adminSessions: [], adminMagicLinks: [], feedback: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [] };
 }
 function ensure() {
   fs.mkdirSync(dataRoot, { recursive: true });
@@ -248,6 +248,11 @@ function adminDashboard(store, context) {
   ].filter(item => item.createdAt).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100);
   const contractors = store.companies.filter(item => item.capabilities?.includes('contractor')).length;
   const subcontractors = store.companies.filter(item => item.capabilities?.includes('subcontractor')).length;
+  const feedback = store.feedback.map(item => ({
+    ...item,
+    company: pub(companyById(store, item.companyId)),
+    user: store.users.find(user => user.id === item.userId) ? { id: item.userId, fullName: store.users.find(user => user.id === item.userId).fullName, email: store.users.find(user => user.id === item.userId).email } : null
+  })).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   return {
     owner: { fullName: context.fullName, email: context.email },
     generatedAt: now(),
@@ -260,7 +265,8 @@ function adminDashboard(store, context) {
       completedJobs: store.jobs.filter(item => ['completed', 'closed'].includes(item.status)).length,
       bids: store.bids.length, conversations: store.conversations.length, messages: store.messages.length,
       acceptedConnections: store.networkConnections.filter(item => item.status === 'accepted').length,
-      reviews: store.reviews.length, credentials: store.credentials.length, portfolioProjects: store.portfolioProjects.length
+      reviews: store.reviews.length, credentials: store.credentials.length, portfolioProjects: store.portfolioProjects.length,
+      feedback: store.feedback.length, openFeedback: store.feedback.filter(item => !['resolved', 'closed'].includes(item.status)).length
     },
     breakdowns: {
       locations: countBy(store.companies, item => [item.city, item.state].filter(Boolean).join(', ')),
@@ -268,7 +274,7 @@ function adminDashboard(store, context) {
       jobStatuses: countBy(store.jobs, 'status'),
       jobTrades: countBy(store.jobs, 'trade')
     },
-    companies, jobs, activity
+    companies, jobs, feedback, activity
   };
 }
 
@@ -330,10 +336,40 @@ async function api(req, res, url) {
       write(store);
       return json(res, 200, { ok: true }, { 'Set-Cookie': adminCookie('', 0) });
     }
+    const adminFeedback = p.match(/^\/api\/admin\/feedback\/([^/]+)$/);
+    if (adminFeedback && req.method === 'PATCH') {
+      const context = adminAuth(req, res, store);
+      if (!context) return;
+      const item = store.feedback.find(feedback => feedback.id === adminFeedback[1]);
+      const b = await body(req);
+      if (!item) return json(res, 404, { error: 'Feedback item not found.' });
+      if (b.status !== undefined) {
+        if (!['new', 'reviewing', 'planned', 'resolved', 'closed'].includes(b.status)) return json(res, 400, { error: 'Choose a valid feedback status.' });
+        item.status = b.status;
+      }
+      if (b.adminNote !== undefined) item.adminNote = clean(b.adminNote, 2000);
+      item.updatedAt = now();
+      item.updatedBy = context.email;
+      write(store);
+      return json(res, 200, { feedback: item });
+    }
     if (req.method === 'GET' && p === '/api/admin') {
       const context = adminAuth(req, res, store);
       if (!context) return;
       return json(res, 200, adminDashboard(store, context));
+    }
+
+    if (req.method === 'POST' && p === '/api/feedback') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const b = await body(req);
+      const category = ['idea', 'bug', 'usability', 'question', 'other'].includes(b.category) ? b.category : 'other';
+      const message = clean(b.message, 3000);
+      if (message.length < 10) return json(res, 400, { error: 'Tell us a little more so we can act on your feedback.' });
+      const item = { id: uid('fbk'), userId: context.user.id, companyId: context.company.id, category, title: clean(b.title, 180), message, page: clean(b.page, 250), status: 'new', adminNote: '', createdAt: now(), updatedAt: now() };
+      store.feedback.push(item);
+      write(store);
+      return json(res, 201, { feedback: item, message: 'Thanks. Your feedback was sent directly to the Trades team.' });
     }
 
     if (req.method === 'POST' && p === '/api/signup') {

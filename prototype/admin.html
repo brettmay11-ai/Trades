@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260613-admin2">
   <link rel="stylesheet" href="admin.css?v=20260613-admin2">
+  <link rel="stylesheet" href="admin-feedback.css?v=20260613-feedback1">
 </head>
 <body class="admin-body">
   <aside class="admin-nav">
@@ -18,6 +19,7 @@
       <button class="active" data-admin-view="overview">Overview</button>
       <button data-admin-view="companies">Users & companies</button>
       <button data-admin-view="jobs">Marketplace jobs</button>
+      <button data-admin-view="feedback">Feedback <span id="feedbackCount"></span></button>
       <button data-admin-view="activity">Recent activity</button>
     </nav>
     <div class="admin-owner"><span id="ownerInitials">TO</span><div><strong id="ownerName">Trades owner</strong><small id="ownerEmail"></small></div></div>
@@ -51,7 +53,12 @@
       <div class="view-toolbar"><div><span class="kicker">Audit feed</span><h2>Recent platform activity</h2></div><select id="activityFilter"><option value="">All activity</option><option value="account">Accounts</option><option value="job">Jobs</option><option value="bid">Bids</option><option value="message">Messages</option><option value="review">Reviews</option></select></div>
       <div class="admin-card"><div class="activity-list" id="activityList"></div></div>
     </section>
+    <section class="admin-view" id="feedbackView" hidden>
+      <div class="view-toolbar"><div><span class="kicker">Voice of the customer</span><h2>User feedback</h2></div><div class="feedback-toolbar"><input id="feedbackSearch" placeholder="Search feedback, users, or companies"><select id="feedbackFilter"><option value="">All statuses</option><option value="new">New</option><option value="reviewing">Reviewing</option><option value="planned">Planned</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select></div></div>
+      <div class="feedback-admin-grid" id="feedbackGrid"></div>
+    </section>
   </main>
   <script src="admin.js?v=20260613-admin2"></script>
+  <script src="admin-feedback.js?v=20260613-feedback1"></script>
 </body>
 </html>
