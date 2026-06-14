@@ -1,6 +1,6 @@
-const locationStyle=document.createElement('link');
+﻿const locationStyle=document.createElement('link');
 locationStyle.rel='stylesheet';
-locationStyle.href='location.css';
+locationStyle.href='location.css?v=20260614-profile-location1';
 document.head.appendChild(locationStyle);
 
 function syncMarketplaceLocation(){
@@ -15,12 +15,15 @@ function syncMarketplaceLocation(){
 
 function renderLocationSettings(){
   if(!dashboard)return;
-  const profile=document.getElementById('profileView');
+  const profile=document.getElementById('profileDetails');
+  if(!profile)return;
   let panel=document.getElementById('locationSettings');
-  if(!panel){panel=document.createElement('article');panel.id='locationSettings';panel.className='workspace-card location-settings';profile.prepend(panel)}
+  if(!panel){panel=document.createElement('section');panel.id='locationSettings';panel.className='workspace-card location-settings profile-marketplace-settings'}
+  const trustSection=profile.querySelector('.profile-trust-section');
+  if(panel.parentElement!==profile||panel.nextElementSibling!==trustSection)profile.insertBefore(panel,trustSection||null);
   const company=dashboard.company;
   const verified=Number.isFinite(company.latitude)&&Number.isFinite(company.longitude);
-  panel.innerHTML=`<div class="location-copy"><span class="kicker">Marketplace location</span><h2>Show work and companies near you.</h2><p>Your marketplace is currently limited to <strong>${escapeHtml(company.city)}, ${escapeHtml(company.state)}</strong>. ${verified?'Your location is verified for accurate radius matching.':'Choose a city suggestion to improve radius matching.'}</p></div><form id="locationForm"><label><span>City</span><input name="city" required autocomplete="address-level2" value="${escapeHtml(company.city)}" placeholder="Columbus"></label><label><span>State</span><input name="state" required autocomplete="address-level1" maxlength="2" value="${escapeHtml(company.state)}" placeholder="OH"></label><input type="hidden" name="placeId" value="${escapeHtml(company.placeId||'')}"><input type="hidden" name="formattedLocation" value="${escapeHtml(company.formattedLocation||'')}"><input type="hidden" name="postalCode" value="${escapeHtml(company.postalCode||'')}"><input type="hidden" name="latitude" value="${company.latitude??''}"><input type="hidden" name="longitude" value="${company.longitude??''}"><button class="button button-orange" type="submit">Update location</button></form>`;
+  panel.innerHTML=`<div class="location-copy"><span class="kicker">Marketplace reach</span><h2>Where your company works</h2><p>Trades uses <strong>${escapeHtml(company.city)}, ${escapeHtml(company.state)}</strong> and your travel radius to show relevant jobs and companies. ${verified?'This location is verified for accurate radius matching.':'Choose a city suggestion to improve radius matching.'}</p></div><form id="locationForm"><label><span>Marketplace city</span><input name="city" required autocomplete="address-level2" value="${escapeHtml(company.city)}" placeholder="Columbus"></label><label><span>State</span><input name="state" required autocomplete="address-level1" maxlength="2" value="${escapeHtml(company.state)}" placeholder="OH"></label><input type="hidden" name="placeId" value="${escapeHtml(company.placeId||'')}"><input type="hidden" name="formattedLocation" value="${escapeHtml(company.formattedLocation||'')}"><input type="hidden" name="postalCode" value="${escapeHtml(company.postalCode||'')}"><input type="hidden" name="latitude" value="${company.latitude??''}"><input type="hidden" name="longitude" value="${company.longitude??''}"><button class="button button-orange" type="submit">Update location</button></form>`;
   document.getElementById('locationForm').addEventListener('submit',updateLocation);
   syncMarketplaceLocation();
 }
@@ -43,3 +46,4 @@ refresh=async function(){await locationRefresh();renderLocationSettings()};
 document.querySelector('[data-view="profile"]').addEventListener('click',renderLocationSettings);
 const locationWait=setInterval(()=>{if(dashboard){clearInterval(locationWait);renderLocationSettings()}},100);
 setTimeout(()=>clearInterval(locationWait),10000);
+window.TradesLocation={render:renderLocationSettings,sync:syncMarketplaceLocation};
