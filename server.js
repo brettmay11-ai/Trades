@@ -60,6 +60,18 @@ function normalizeCompanies(store) {
     if (typeof company.city !== 'string') { company.city = ''; changed = true; }
     if (typeof company.state !== 'string') { company.state = ''; changed = true; }
     if (!Number.isFinite(company.serviceRadius)) { company.serviceRadius = 50; changed = true; }
+    if (!storedCoordinates(company)) {
+      const legacy = cityCoordinates[locationKey(company)];
+      if (legacy) { company.latitude = legacy[0]; company.longitude = legacy[1]; changed = true; }
+    }
+    if (!company.formattedLocation && company.city && company.state) { company.formattedLocation = `${company.city}, ${company.state}`; changed = true; }
+  });
+  (store.jobs || []).forEach(job => {
+    if (!storedCoordinates(job)) {
+      const legacy = cityCoordinates[locationKey(job)];
+      if (legacy) { job.latitude = legacy[0]; job.longitude = legacy[1]; changed = true; }
+    }
+    if (!job.formattedLocation && job.city && job.state) { job.formattedLocation = `${job.city}, ${job.state}`; changed = true; }
   });
   if (changed) write(store);
   return store;
@@ -70,6 +82,20 @@ function uid(prefix) { return `${prefix}_${crypto.randomUUID()}`; }
 function now() { return new Date().toISOString(); }
 function clean(value, max = 250) { return String(value || '').trim().slice(0, max); }
 function email(value) { return clean(value, 254).toLowerCase(); }
+function coordinate(value, min, max) {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= min && number <= max ? number : null;
+}
+function locationFields(value = {}) {
+  return {
+    placeId: clean(value.placeId, 250),
+    formattedLocation: clean(value.formattedLocation, 250),
+    postalCode: clean(value.postalCode, 20),
+    latitude: coordinate(value.latitude, -90, 90),
+    longitude: coordinate(value.longitude, -180, 180)
+  };
+}
 function canonicalTrade(value) {
   const normalized = clean(value, 100).toLowerCase();
   return trades.find(trade => trade.toLowerCase() === normalized) || tradeAliases[normalized] || '';
@@ -106,11 +132,11 @@ function adminCookie(token, age = adminSessionHours * 3600) {
 
 // ---- Domain helpers --------------------------------------------------------
 function pub(company) {
-  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, createdAt: company.createdAt };
+  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, createdAt: company.createdAt };
 }
 function companyDetail(company) {
   const detail = Object.fromEntries(Object.keys(profileFields).map(key => [key, company[key] || '']));
-  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, ...detail };
+  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, ...detail };
 }
 function ctx(req, store) {
   const session = store.sessions.find(item => item.token === cookies(req).trades_session && item.expiresAt > now());
@@ -144,9 +170,19 @@ function enrichJob(store, job, company) {
 
 // Location / service-area math.
 function locationKey(item) { return `${clean(item.city, 80).toLowerCase()},${clean(item.state, 2).toLowerCase()}`; }
+function storedCoordinates(item) {
+  const latitude = coordinate(item?.latitude, -90, 90), longitude = coordinate(item?.longitude, -180, 180);
+  if (latitude !== null && longitude !== null) return [latitude, longitude];
+  return null;
+}
+function coordinates(item) {
+  const stored = storedCoordinates(item);
+  if (stored) return stored;
+  return cityCoordinates[locationKey(item)] || null;
+}
 function distanceMiles(a, b) {
-  if (locationKey(a) === locationKey(b)) return 0;
-  const p = cityCoordinates[locationKey(a)], q = cityCoordinates[locationKey(b)];
+  const p = coordinates(a), q = coordinates(b);
+  if (!storedCoordinates(a) && !storedCoordinates(b) && locationKey(a) === locationKey(b)) return 0;
   if (!p || !q) return Infinity;
   const rad = degrees => degrees * Math.PI / 180;
   const dLat = rad(q[0] - p[0]), dLon = rad(q[1] - p[1]);
@@ -386,7 +422,7 @@ async function api(req, res, url) {
       if (store.users.some(item => item.email === userEmail)) return json(res, 409, { error: 'An account already exists for this email.' });
       const credentials = hash(password);
       const user = { id: uid('usr'), email: userEmail, fullName: clean(b.fullName, 100), passwordSalt: credentials.salt, passwordHash: credentials.hash, createdAt: now() };
-      const company = { id: uid('cmp'), name: clean(b.companyName, 140), city: clean(b.city, 80), state: clean(b.state, 2).toUpperCase(), capabilities: caps, trades: companyTrades, serviceRadius: 50, createdAt: now() };
+      const company = { id: uid('cmp'), name: clean(b.companyName, 140), city: clean(b.city, 80), state: clean(b.state, 2).toUpperCase(), ...locationFields(b), capabilities: caps, trades: companyTrades, serviceRadius: 50, createdAt: now() };
       const session = { token: crypto.randomBytes(32).toString('hex'), userId: user.id, expiresAt: new Date(Date.now() + sessionHours * 3600e3).toISOString() };
       store.users.push(user); store.companies.push(company); store.memberships.push({ userId: user.id, companyId: company.id, role: 'owner' }); store.sessions.push(session);
       const invite = store.networkInvites.find(item => item.token === clean(b.inviteToken, 100) && item.status === 'pending');
@@ -483,7 +519,7 @@ async function api(req, res, url) {
         user: { id: context.user.id, email: context.user.email, fullName: context.user.fullName },
         company: pub(company), conversations, directory, connections,
         invites: store.networkInvites.filter(item => item.inviterCompanyId === company.id), referrals, postedJobs, availableJobs,
-        marketplaceLocation: { city: company.city, state: company.state, serviceRadius: radius },
+        marketplaceLocation: { city: company.city, state: company.state, ...locationFields(company), serviceRadius: radius },
         unreadNotifications: store.notifications.filter(item => item.companyId === company.id && !item.readAt).length
       });
     }
@@ -500,7 +536,7 @@ async function api(req, res, url) {
       const state = clean(b.state, 2).toUpperCase();
       if (!title || !city || state.length !== 2) return json(res, 400, { error: 'Add a title, trade, city, and two-letter state.' });
       if (!trade) return json(res, 400, { error: 'Select a trade from the standard trade list.' });
-      const job = { id: uid('job'), postingCompanyId: context.company.id, title, trade, city, state, projectType: clean(b.projectType, 100), budget: clean(b.budget, 100), startDate: clean(b.startDate, 20), description: clean(b.description, 3000), status: 'published', createdAt: now() };
+      const job = { id: uid('job'), postingCompanyId: context.company.id, title, trade, city, state, ...locationFields(b), projectType: clean(b.projectType, 100), budget: clean(b.budget, 100), startDate: clean(b.startDate, 20), description: clean(b.description, 3000), status: 'published', createdAt: now() };
       store.jobs.push(job);
       store.savedSearches.forEach(search => {
         const searchCompany = companyById(store, search.companyId);
@@ -576,6 +612,7 @@ async function api(req, res, url) {
       if (b.trade !== undefined) { const t = canonicalTrade(b.trade); if (!t) return json(res, 400, { error: 'Select a trade from the standard trade list.' }); job.trade = t; }
       if (b.city !== undefined) job.city = clean(b.city, 80);
       if (b.state !== undefined) job.state = clean(b.state, 2).toUpperCase();
+      if (b.city !== undefined || b.state !== undefined || b.placeId !== undefined || b.latitude !== undefined || b.longitude !== undefined) Object.assign(job, locationFields(b));
       if (b.budget !== undefined) job.budget = clean(b.budget, 100);
       if (b.startDate !== undefined) job.startDate = clean(b.startDate, 20);
       if (b.description !== undefined) job.description = clean(b.description, 3000);
@@ -717,7 +754,7 @@ async function api(req, res, url) {
       const city = clean(b.city, 80);
       const state = clean(b.state, 2).toUpperCase();
       if (!city || state.length !== 2) return json(res, 400, { error: 'Enter a city and two-letter state.' });
-      context.company.city = city; context.company.state = state;
+      context.company.city = city; context.company.state = state; Object.assign(context.company, locationFields(b));
       write(store);
       return json(res, 200, { company: pub(context.company) });
     }

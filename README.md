@@ -38,6 +38,7 @@ Real magic-link delivery uses Resend. Configure `RESEND_API_KEY`, plus an option
 - [Initial data model](docs/DATA_MODEL.md)
 - [Account backend](docs/BACKEND.md)
 - [Trusted trade networks](docs/TRADE_NETWORKS.md)
+- [Location matching](docs/LOCATION_MATCHING.md)
 - [MVP build backlog](https://github.com/brettmay11-ai/Trades/issues)
 
 ## Current application stack
