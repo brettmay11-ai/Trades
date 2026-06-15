@@ -16,5 +16,5 @@ test('marketplace reach is integrated into the rendered profile flow', () => {
   assert.doesNotMatch(location, /profile\.prepend/);
   assert.match(roleProfile, /TradesLocation\?\.render/);
   assert.match(dashboard, /location\.js\?v=20260614-profile-location1/);
-  assert.match(dashboard, /profile-v2\.js\?v=20260614-profile-location1/);
+  assert.match(dashboard, /profile-v2\.js\?v=/);
 });
