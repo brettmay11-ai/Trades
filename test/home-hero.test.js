@@ -60,3 +60,12 @@ test('how it works uses customer-facing call to action copy',()=>{
   assert.match(html,/>Join Trades<\/a>/);
   assert.doesNotMatch(html,/first backend milestone/i);
 });
+
+test('landing hero uses the selected dark blueprint background',()=>{
+  const html=read('prototype/index.html');
+  const styles=read('prototype/styles.css');
+  assert.match(styles,/\.hero \{[^}]*background: #0b2538;/);
+  assert.match(styles,/background-size: 48px 48px, 48px 48px, 12px 12px, 12px 12px;/);
+  assert.match(styles,/\.hero-glow-two \{[^}]*background: #5e94b2;/);
+  assert.match(html,/styles\.css\?v=20260615-home7/);
+});
