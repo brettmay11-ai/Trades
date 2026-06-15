@@ -69,3 +69,17 @@ test('landing hero uses the selected dark blueprint background',()=>{
   assert.match(styles,/\.hero-glow-two \{[^}]*background: #5e94b2;/);
   assert.match(html,/styles\.css\?v=20260615-home7/);
 });
+
+test('site uses the blueprint blue brand system across public and account pages',()=>{
+  const styles=read('prototype/styles.css');
+  const brand=read('prototype/brand-blue.css');
+  for(const page of ['prototype/index.html','prototype/pricing.html','prototype/account.html','prototype/admin.html','prototype/admin-login.html']){
+    assert.match(read(page),/brand-blue\.css\?v=20260615-blue1/);
+  }
+  assert.match(styles,/--ink: #102331;/);
+  assert.match(styles,/--green: #245f82;/);
+  assert.match(styles,/--sage: #dce9f0;/);
+  assert.match(brand,/\.dashboard-nav \{ background: #0b2538; \}/);
+  assert.match(brand,/\.admin-nav \{ background: #071c2a; \}/);
+  assert.match(read('prototype/dashboard-bridge.js'),/brand-blue\.css\?v=20260615-blue1/);
+});

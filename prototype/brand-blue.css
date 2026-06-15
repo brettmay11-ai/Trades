@@ -1,0 +1,57 @@
+:root {
+  --ink: #102331;
+  --ink-soft: #465966;
+  --sage: #dce9f0;
+  --green: #245f82;
+  --shadow: 0 24px 70px rgba(11, 37, 56, .12);
+}
+
+.button-dark { background: #0b2538; }
+.button-dark:hover { background: #174866; }
+.button-green:hover { background: #174866; }
+.avatar-stack span:nth-child(4) { background: #174866; }
+
+.account-body { background: #0b2538; }
+.dashboard-nav { background: #0b2538; }
+.dashboard-nav nav button.active,
+.dashboard-nav nav button:hover { background: #174866; }
+
+.market-job .job-company .company-mark,
+.build-ground,
+.build-crane,
+.build-crane:before,
+.build-crane:after { background: #0b2538; }
+
+.feedback-launcher { background: #0b2538; }
+.feedback-dialog,
+.feedback-shell input,
+.feedback-shell select,
+.feedback-shell textarea { color: #102331; }
+.feedback-dialog::backdrop { background: rgba(7, 28, 42, .58); }
+
+.admin-login-body { color: #102331; background: #071c2a; }
+.admin-body {
+  --admin-ink: #102331;
+  --admin-green: #245f82;
+}
+.admin-nav { background: #071c2a; }
+.admin-nav nav button.active,
+.admin-nav nav button:hover { background: #174866; }
+.admin-owner > span { color: #102331; }
+.activity-icon { background: #245f82; }
+
+.message-job-pill,
+.trade-chip-list button,
+.trades-suggestion-menu button small {
+  color: #245f82;
+  background: #eaf3f8;
+}
+.message-thread {
+  background-image: linear-gradient(rgba(36, 95, 130, .035) 1px, transparent 1px);
+}
+
+.account-form input:focus,
+.location-settings input:focus,
+.trades-suggestion-wrap:focus-within > input {
+  box-shadow: 0 0 0 3px rgba(36, 95, 130, .12);
+}
