@@ -43,3 +43,13 @@ test('landing role paths use large green labels and omit the old trust section',
   assert.doesNotMatch(html,/class="section trust-section"/);
   assert.doesNotMatch(html,/href="#trust"/);
 });
+
+test('landing closes with a full-width orange call to action and green sign in',()=>{
+  const html=read('prototype/index.html');
+  const styles=read('prototype/styles.css');
+  assert.doesNotMatch(html,/DFW first\. Nationwide next\./);
+  assert.match(html,/class="button button-green" href="\/login">Sign in/);
+  assert.match(styles,/\.button-green \{ color: #fff; background: var\(--green\);/);
+  assert.match(styles,/\.cta-section \{ margin: 0; padding: 82px 7vw;/);
+  assert.match(styles,/background: var\(--orange\);/);
+});

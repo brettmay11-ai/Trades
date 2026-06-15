@@ -27,7 +27,7 @@ test('mobile messages use an inbox-to-conversation flow',()=>{
 });
 
 test('public and account pages load the phone-first layer',()=>{
-  assert.match(read('prototype/index.html'),/mobile\.css\?v=20260615-mobile6/);
+  assert.match(read('prototype/index.html'),/mobile\.css\?v=20260615-mobile7/);
   assert.match(read('prototype/account.html'),/mobile\.css\?v=20260615-mobile3/);
   const styles=read('prototype/mobile.css');
   assert.match(styles,/\.role-preview\{width:100%;overflow:visible\}/);
