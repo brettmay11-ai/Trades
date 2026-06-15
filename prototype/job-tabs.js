@@ -1,70 +1,93 @@
-/* Subcontractor jobs page tabs: Find work | My bids | Work won.
-   Additive module. Runs after jobs.js and awarded-work.js have defined and wrapped
-   renderJobMarketplace, so the awarded "Work won" section already exists when we apply. */
+/* Role-aware tabs on the jobs page.
+   Subcontractor: Find work | My bids | Work won.
+   Contractor:    Posted jobs | Awarded jobs.
+   A dual-capability company sees all five. Additive module: runs after jobs.js
+   and awarded-work.js have defined and wrapped renderJobMarketplace, so the
+   awarded "Work won" section already exists when we apply. */
 (() => {
-  let active = 'find';
+  let active = null;
 
   function findSection() {
     const grid = document.getElementById('availableJobGrid');
     return grid ? grid.closest('.job-section') : null;
   }
-
-  function ensureBidsSection() {
-    let section = document.getElementById('outstandingBidsSection');
-    if (section) return section;
-    const available = findSection();
-    if (!available) return null;
-    section = document.createElement('section');
-    section.className = 'job-section outstanding-bids-section';
-    section.id = 'outstandingBidsSection';
-    section.hidden = true;
-    section.style.display = 'none';
-    section.innerHTML = '<div class="card-heading"><div><span class="kicker">Outstanding bids</span><h2>Bids awaiting a decision</h2><p>Jobs you have bid on. Update your bid or message the contractor while you wait for their decision.</p></div></div><div class="market-job-grid" id="outstandingBidsGrid"></div>';
-    available.after(section);
-    return section;
-  }
-
-  function ensureTabs() {
-    let tabs = document.getElementById('jobTabs');
-    if (tabs) return tabs;
-    const heading = document.querySelector('#jobsView .page-heading');
-    if (!heading) return null;
-    tabs = document.createElement('div');
-    tabs.className = 'job-tabs';
-    tabs.id = 'jobTabs';
-    tabs.innerHTML = '<button class="job-tab active" type="button" data-job-tab="find">Find work</button><button class="job-tab" type="button" data-job-tab="bids">My bids<span class="job-tab-count" id="jobTabBidsCount"></span></button><button class="job-tab" type="button" data-job-tab="won">Work won<span class="job-tab-count" id="jobTabWonCount"></span></button>';
-    heading.after(tabs);
-    tabs.querySelectorAll('[data-job-tab]').forEach(button => button.addEventListener('click', () => { active = button.dataset.jobTab; applyTabs(); }));
-    return tabs;
-  }
-
   function setVisible(element, on) {
     if (!element) return;
     element.hidden = !on;
     element.style.display = on ? '' : 'none';
   }
-
-  function applyTabs() {
-    const tabs = ensureTabs();
-    const bids = ensureBidsSection();
-    if (typeof dashboard === 'undefined' || !dashboard || !dashboard.company) return;
-    const isSub = dashboard.company.capabilities.includes('subcontractor');
-    if (tabs) tabs.classList.toggle('show', isSub);
-    if (!isSub) { setVisible(bids, false); return; }
-    const pending = dashboard.availableJobs.filter(job => job.myBid).length;
-    const won = (dashboard.submittedBids || []).filter(bid => bid.status === 'accepted').length;
-    const bidsCount = document.getElementById('jobTabBidsCount');
-    if (bidsCount) bidsCount.textContent = pending || '';
-    const wonCount = document.getElementById('jobTabWonCount');
-    if (wonCount) wonCount.textContent = won || '';
-    if (tabs) tabs.querySelectorAll('[data-job-tab]').forEach(button => button.classList.toggle('active', button.dataset.jobTab === active));
-    setVisible(findSection(), active === 'find');
-    setVisible(bids, active === 'bids');
-    setVisible(document.getElementById('awardedWorkSection'), active === 'won');
+  function makeSection(id, cls, anchor, html) {
+    if (!anchor || document.getElementById(id)) return;
+    const section = document.createElement('section');
+    section.className = 'job-section ' + cls;
+    section.id = id;
+    section.hidden = true;
+    section.style.display = 'none';
+    section.innerHTML = html;
+    anchor.after(section);
+  }
+  function ensureSections() {
+    makeSection('outstandingBidsSection', 'outstanding-bids-section', findSection(),
+      '<div class="card-heading"><div><span class="kicker">Outstanding bids</span><h2>Bids awaiting a decision</h2><p>Jobs you have bid on. Update your bid or message the contractor while you wait for their decision.</p></div></div><div class="market-job-grid" id="outstandingBidsGrid"></div>');
+    makeSection('contractorAwardedSection', 'contractor-awarded-section', document.getElementById('postedJobsSection'),
+      '<div class="card-heading"><div><span class="kicker">Awarded jobs</span><h2>Jobs you have awarded</h2><p>Jobs you posted that have been awarded to a subcontractor.</p></div></div><div class="market-job-grid" id="contractorAwardedGrid"></div>');
   }
 
-  ensureTabs();
-  ensureBidsSection();
+  const DEFS = {
+    find: { label: 'Find work', sections: () => [findSection()] },
+    bids: { label: 'My bids', sections: () => [document.getElementById('outstandingBidsSection')], count: () => dashboard.availableJobs.filter(job => job.myBid).length },
+    won: { label: 'Work won', sections: () => [document.getElementById('awardedWorkSection')], count: () => (dashboard.submittedBids || []).filter(bid => bid.status === 'accepted').length },
+    posted: { label: 'Posted jobs', sections: () => [document.getElementById('jobPostForm'), document.getElementById('postedJobsSection')], count: () => dashboard.postedJobs.filter(job => job.status === 'published').length },
+    awarded: { label: 'Awarded jobs', sections: () => [document.getElementById('contractorAwardedSection')], count: () => dashboard.postedJobs.filter(job => job.status !== 'published').length }
+  };
+
+  function tabKeys() {
+    const caps = dashboard.company.capabilities || [];
+    const keys = [];
+    if (caps.includes('subcontractor')) keys.push('find', 'bids', 'won');
+    if (caps.includes('contractor')) keys.push('posted', 'awarded');
+    return keys;
+  }
+
+  function ensureTabs(keys) {
+    const heading = document.querySelector('#jobsView .page-heading');
+    if (!heading) return null;
+    let tabs = document.getElementById('jobTabs');
+    if (!tabs) {
+      tabs = document.createElement('div');
+      tabs.className = 'job-tabs';
+      tabs.id = 'jobTabs';
+      heading.after(tabs);
+    }
+    if (tabs.dataset.keys !== keys.join(',')) {
+      tabs.dataset.keys = keys.join(',');
+      tabs.style.gridTemplateColumns = 'repeat(' + keys.length + ',1fr)';
+      tabs.innerHTML = keys.map((key, index) => '<button class="job-tab' + (index === 0 ? ' active' : '') + '" type="button" data-job-tab="' + key + '">' + DEFS[key].label + '<span class="job-tab-count" id="jobTabCount-' + key + '"></span></button>').join('');
+      tabs.querySelectorAll('[data-job-tab]').forEach(button => button.addEventListener('click', () => { active = button.dataset.jobTab; applyTabs(); }));
+      active = keys[0];
+    }
+    return tabs;
+  }
+
+  function applyTabs() {
+    if (typeof dashboard === 'undefined' || !dashboard || !dashboard.company) return;
+    ensureSections();
+    const keys = tabKeys();
+    const tabs = ensureTabs(keys);
+    if (!tabs) return;
+    tabs.classList.toggle('show', keys.length > 0);
+    if (!keys.length) return;
+    if (!keys.includes(active)) active = keys[0];
+    keys.forEach(key => {
+      const countEl = document.getElementById('jobTabCount-' + key);
+      if (countEl) { const count = DEFS[key].count ? DEFS[key].count() : 0; countEl.textContent = count || ''; }
+      const button = tabs.querySelector('[data-job-tab="' + key + '"]');
+      if (button) button.classList.toggle('active', key === active);
+      DEFS[key].sections().forEach(element => setVisible(element, key === active));
+    });
+  }
+
+  ensureSections();
   if (typeof renderJobMarketplace !== 'undefined') {
     const base = renderJobMarketplace;
     renderJobMarketplace = function () { base(); applyTabs(); };
