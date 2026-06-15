@@ -133,11 +133,11 @@ function adminCookie(token, age = adminSessionHours * 3600) {
 
 // ---- Domain helpers --------------------------------------------------------
 function pub(company) {
-  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, createdAt: company.createdAt };
+  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, speaksSpanish: Boolean(company.speaksSpanish), createdAt: company.createdAt };
 }
 function companyDetail(company) {
   const detail = Object.fromEntries(Object.keys(profileFields).map(key => [key, company[key] || '']));
-  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, ...detail };
+  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, speaksSpanish: Boolean(company.speaksSpanish), ...detail };
 }
 function ctx(req, store) {
   const session = store.sessions.find(item => item.token === cookies(req).trades_session && item.expiresAt > now());
@@ -806,6 +806,7 @@ async function api(req, res, url) {
       const image = String(b.profileImage || '');
       if (image && (!/^data:image\/(png|jpeg|webp);base64,/i.test(image) || image.length > 2100000)) return json(res, 400, { error: 'Choose a PNG, JPG, or WebP image under 1.5 MB.' });
       for (const [key, max] of Object.entries(profileFields)) context.company[key] = key === 'profileImage' ? image : clean(b[key], max);
+      if (b.speaksSpanish !== undefined) context.company.speaksSpanish = Boolean(b.speaksSpanish);
       write(store);
       return json(res, 200, { company: companyDetail(context.company) });
     }
