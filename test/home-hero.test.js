@@ -53,3 +53,10 @@ test('landing closes with a full-width orange call to action and green sign in',
   assert.match(styles,/\.cta-section \{ margin: 0; padding: 82px 7vw;/);
   assert.match(styles,/background: var\(--orange\);/);
 });
+
+test('how it works uses customer-facing call to action copy',()=>{
+  const html=read('prototype/index.html');
+  assert.match(html,/Ready to find the right crew or your next job\?/);
+  assert.match(html,/>Join Trades<\/a>/);
+  assert.doesNotMatch(html,/first backend milestone/i);
+});
