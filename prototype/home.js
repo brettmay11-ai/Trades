@@ -1,32 +1,32 @@
+const contractorJobs=[
+  {trade:'Framing',title:'Framing crew needed',location:'Plano, TX',meta:'Starts Jun 22',budget:'$18k - $24k',bids:'6 bids',tone:'orange'},
+  {trade:'Electrical',title:'Electrical rough-in',location:'Frisco, TX',meta:'Starts Jul 1',budget:'$9k - $14k',bids:'4 bids',tone:'green'},
+  {trade:'HVAC',title:'HVAC installation',location:'McKinney, TX',meta:'Starts Jul 8',budget:'$22k - $30k',bids:'2 bids',tone:'gold'}
+];
+
+const subcontractorJobs=[
+  {trade:'Drywall',title:'Commercial drywall install',location:'Irving, TX',meta:'14 miles away',budget:'$32k - $44k',detail:'Starts Jul 8',tone:'green'},
+  {trade:'Tile',title:'Tile package for 18 townhomes',location:'Dallas, TX',meta:'8 miles away',budget:'$18k - $25k',detail:'Starts Jun 29',tone:'orange'},
+  {trade:'Framing',title:'Framing crew for custom homes',location:'Plano, TX',meta:'21 miles away',budget:'$42k - $58k',detail:'Starts Jul 15',tone:'gold'}
+];
+
+const jobCard=(job,role)=>`<article class="hero-job-card">
+  <div class="hero-job-topline"><span class="hero-trade ${job.tone}">${job.trade}</span><span class="hero-job-status">${role==='contractor'?job.bids:'Verified contractor'}</span></div>
+  <h3>${job.title}</h3>
+  <p class="hero-job-location"><span aria-hidden="true">&#9679;</span>${job.location}<small>${job.meta}</small></p>
+  <div class="hero-job-footer"><div><small>Estimated value</small><strong>${job.budget}</strong></div><button type="button">${role==='contractor'?'Review bids':'View & bid'}</button></div>
+  ${role==='subcontractor'?`<p class="hero-job-start">${job.detail}<span>Plans attached</span></p>`:''}
+</article>`;
+
+const preview=(role,jobs)=>`<div class="role-marketplace-preview" data-preview="${role}">
+  <div class="role-preview-heading"><div><span>${role==='contractor'?'Your posted jobs':'Matched to your profile'}</span><h2>${role==='contractor'?'Watch qualified bids come in.':'Good work, close to your crew.'}</h2></div><strong>${role==='contractor'?'12 new bids':'24 nearby jobs'}</strong></div>
+  <div class="hero-job-stack">${jobs.map(job=>jobCard(job,role)).join('')}</div>
+  <div class="role-preview-note"><span aria-hidden="true">&#10003;</span>${role==='contractor'?'Compare experience, credentials, and pricing before you hire.':'Filtered by trade, location, travel radius, and availability.'}</div>
+</div>`;
+
 const roleViews={
-  contractor:{
-    cta:'Create contractor workspace',
-    preview:`<div class="preview-window" data-preview="contractor">
-      <div class="preview-chrome"><span></span><span></span><span></span><strong>Contractor workspace</strong><small>trades.app/dashboard</small></div>
-      <div class="preview-app">
-        <nav class="preview-nav"><div class="preview-logo">T</div><span class="selected">Overview</span><span>My jobs</span><span>Bids</span><span>Network</span><span>Messages</span><div class="preview-user">BH</div></nav>
-        <div class="preview-main">
-          <div class="preview-heading"><div><small>Good morning, Brett</small><h3>Keep your projects moving.</h3></div><button>+ Post a job</button></div>
-          <div class="preview-stats"><span><small>Open jobs</small><strong>8</strong><em>3 closing soon</em></span><span><small>New bids</small><strong>14</strong><em>Since Monday</em></span><span><small>Trade partners</small><strong>36</strong><em>5 trusted</em></span></div>
-          <div class="preview-columns"><div class="preview-list"><div class="preview-section-title"><strong>Active jobs</strong><small>View all</small></div><article><i class="trade-mark orange">FR</i><div><strong>Framing crew needed</strong><small>Plano, TX · Starts Jun 22</small></div><b>6 bids</b></article><article><i class="trade-mark green">EL</i><div><strong>Electrical rough-in</strong><small>Frisco, TX · Starts Jul 01</small></div><b>4 bids</b></article><article><i class="trade-mark gold">HV</i><div><strong>HVAC installation</strong><small>McKinney, TX · Starts Jul 08</small></div><b>2 bids</b></article></div><aside class="preview-activity"><div class="preview-section-title"><strong>New bids</strong><small>Today</small></div><div class="bid-person"><i>JM</i><span><strong>J&M Framing</strong><small>Bid on Framing crew</small></span><b>$18.4k</b></div><div class="bid-person"><i>AP</i><span><strong>All-Pro Electric</strong><small>Bid on Electrical rough-in</small></span><b>$9.8k</b></div><button class="preview-action">Compare bids</button></aside></div>
-        </div>
-      </div>
-    </div>`
-  },
-  subcontractor:{
-    cta:'Create subcontractor workspace',
-    preview:`<div class="preview-window" data-preview="subcontractor">
-      <div class="preview-chrome"><span></span><span></span><span></span><strong>Subcontractor workspace</strong><small>trades.app/jobs</small></div>
-      <div class="preview-app">
-        <nav class="preview-nav"><div class="preview-logo">T</div><span class="selected">Find jobs</span><span>My bids</span><span>Network</span><span>Messages</span><span>Profile</span><div class="preview-user sub-user">JM</div></nav>
-        <div class="preview-main">
-          <div class="preview-heading"><div><small>Jobs near Dallas, TX</small><h3>Find the right work for your crew.</h3></div><button>Update profile</button></div>
-          <div class="preview-search"><span>Framing</span><span>Within 50 miles</span><button>Search jobs</button></div>
-          <div class="preview-columns sub-columns"><div class="preview-list opportunity-list"><div class="preview-section-title"><strong>Recommended opportunities</strong><small>24 matches</small></div><article><i class="trade-mark orange">FR</i><div><strong>Framing crew needed</strong><small>Plano · Posted 2 hours ago</small><em>Verified contractor · 6 week project</em></div><b>View job</b></article><article><i class="trade-mark green">DW</i><div><strong>Commercial drywall install</strong><small>Irving · Posted yesterday</small><em>12,000 sq ft · Plans attached</em></div><b>View job</b></article></div><aside class="preview-activity profile-ready"><div class="profile-ring"><strong>86%</strong></div><strong>Profile strength</strong><small>Add recent project photos to stand out.</small><div class="profile-check"><span>✓</span> Insurance added</div><div class="profile-check"><span>✓</span> 3 trade references</div><button class="preview-action">Finish profile</button></aside></div>
-        </div>
-      </div>
-    </div>`
-  }
+  contractor:{cta:'Create contractor workspace',preview:preview('contractor',contractorJobs)},
+  subcontractor:{cta:'Create subcontractor workspace',preview:preview('subcontractor',subcontractorJobs)}
 };
 
 const rolePreview=document.getElementById('rolePreview');
