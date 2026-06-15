@@ -55,3 +55,22 @@
 .trades-suggestion-wrap:focus-within > input {
   box-shadow: 0 0 0 3px rgba(36, 95, 130, .12);
 }
+
+.profile-form-section select,
+.trust-form select {
+  padding-right: 44px !important;
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--ink);
+  background-color: #fff;
+  background-image: linear-gradient(45deg, transparent 50%, var(--green) 50%), linear-gradient(135deg, var(--green) 50%, transparent 50%), linear-gradient(to right, var(--line), var(--line)) !important;
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%, calc(100% - 34px) 50% !important;
+  background-size: 5px 5px, 5px 5px, 1px 55% !important;
+  background-repeat: no-repeat !important;
+  cursor: pointer;
+}
+
+.materials-answer {
+  color: var(--green);
+  font-weight: 800;
+}

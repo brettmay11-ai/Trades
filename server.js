@@ -159,6 +159,7 @@ function adminAuth(req, res, store) {
   return context;
 }
 function companyById(store, id) { return store.companies.find(item => item.id === id); }
+function materialsIncluded(value) { return value === true || String(value).toLowerCase() === 'yes'; }
 function conv(store, id, companyId) { return store.conversations.find(item => item.id === id && item.companyIds.includes(companyId)); }
 function conversationJob(store, conversation) {
   const job = store.jobs.find(item => item.id === conversation.jobId);
@@ -575,7 +576,7 @@ async function api(req, res, url) {
       const state = clean(b.state, 2).toUpperCase();
       if (!title || !city || state.length !== 2) return json(res, 400, { error: 'Add a title, trade, city, and two-letter state.' });
       if (!trade) return json(res, 400, { error: 'Select a trade from the standard trade list.' });
-      const job = { id: uid('job'), postingCompanyId: context.company.id, title, trade, city, state, ...locationFields(b), projectType: clean(b.projectType, 100), budget: clean(b.budget, 100), startDate: clean(b.startDate, 20), description: clean(b.description, 3000), status: 'published', createdAt: now() };
+      const job = { id: uid('job'), postingCompanyId: context.company.id, title, trade, city, state, ...locationFields(b), projectType: clean(b.projectType, 100), budget: clean(b.budget, 100), materialsIncluded: materialsIncluded(b.materialsIncluded), startDate: clean(b.startDate, 20), description: clean(b.description, 3000), status: 'published', createdAt: now() };
       store.jobs.push(job);
       store.savedSearches.forEach(search => {
         const searchCompany = companyById(store, search.companyId);
@@ -604,8 +605,8 @@ async function api(req, res, url) {
       const scope = clean(b.scope, 2500);
       if (!amount || !scope) return json(res, 400, { error: 'Add a bid amount and scope.' });
       let bid = store.bids.find(item => item.jobId === job.id && item.biddingCompanyId === context.company.id);
-      if (bid) Object.assign(bid, { amount, scope, schedule: clean(b.schedule, 200), status: 'submitted', updatedAt: now() });
-      else { bid = { id: uid('bid'), jobId: job.id, biddingCompanyId: context.company.id, submittedByUserId: context.user.id, amount, scope, schedule: clean(b.schedule, 200), status: 'submitted', createdAt: now(), updatedAt: now() }; store.bids.push(bid); }
+      if (bid) Object.assign(bid, { amount, scope, schedule: clean(b.schedule, 200), materialsIncluded: materialsIncluded(b.materialsIncluded), status: 'submitted', updatedAt: now() });
+      else { bid = { id: uid('bid'), jobId: job.id, biddingCompanyId: context.company.id, submittedByUserId: context.user.id, amount, scope, schedule: clean(b.schedule, 200), materialsIncluded: materialsIncluded(b.materialsIncluded), status: 'submitted', createdAt: now(), updatedAt: now() }; store.bids.push(bid); }
       notify(store, job.postingCompanyId, 'bid_received', 'New bid received', `${context.company.name} submitted a bid on ${job.title}.`, '/jobs', bid.id);
       write(store);
       return json(res, 201, { bid });
@@ -654,6 +655,7 @@ async function api(req, res, url) {
       if (b.state !== undefined) job.state = clean(b.state, 2).toUpperCase();
       if (b.city !== undefined || b.state !== undefined || b.placeId !== undefined || b.latitude !== undefined || b.longitude !== undefined) Object.assign(job, locationFields(b));
       if (b.budget !== undefined) job.budget = clean(b.budget, 100);
+      if (b.materialsIncluded !== undefined) job.materialsIncluded = materialsIncluded(b.materialsIncluded);
       if (b.startDate !== undefined) job.startDate = clean(b.startDate, 20);
       if (b.description !== undefined) job.description = clean(b.description, 3000);
       if (!job.title || !job.city || job.state.length !== 2) return json(res, 400, { error: 'Job must have a title, city, and two-letter state.' });

@@ -16,3 +16,17 @@ test('contractor-only Jobs view explicitly removes search, alerts, and available
   assert.match(script,/availableSection\.style\.display=isSub\?'':'none'/);
   assert.match(styles,/\.job-filters\[hidden\],\.job-section\[hidden\]\{display:none!important\}/);
 });
+
+test('flexible-account Posted Jobs content stays below the role tabs',()=>{
+  const tabs=fs.readFileSync(path.join(__dirname,'..','prototype','job-tabs.js'),'utf8');
+  assert.match(tabs,/postedJobs\.previousElementSibling !== tabs/);
+  assert.match(tabs,/tabs\.after\(postedJobs\)/);
+});
+
+test('job posts and bids capture and display whether materials are included',()=>{
+  const script=fs.readFileSync(path.join(__dirname,'..','prototype','jobs.js'),'utf8');
+  assert.match(script,/Materials included in budget\?/);
+  assert.match(script,/Materials included in bid\?/);
+  assert.match(script,/materialsText\(job\.materialsIncluded\)/);
+  assert.match(script,/materialsText\(bid\.materialsIncluded\)/);
+});

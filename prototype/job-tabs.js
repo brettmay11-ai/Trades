@@ -75,6 +75,8 @@
     const keys = tabKeys();
     const tabs = ensureTabs(keys);
     if (!tabs) return;
+    const postedJobs = document.getElementById('postedJobsSection');
+    if (postedJobs && postedJobs.previousElementSibling !== tabs) tabs.after(postedJobs);
     tabs.classList.toggle('show', keys.length > 0);
     if (!keys.length) return;
     if (!keys.includes(active)) active = keys[0];

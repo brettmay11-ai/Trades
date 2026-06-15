@@ -22,3 +22,10 @@ test('native selects and predictive menus have Trades styling',()=>{
   assert.match(taxonomy,/\.trades-suggestion-menu/);
   assert.match(taxonomy,/border-top:3px solid var\(--orange\)/);
 });
+
+test('profile credential type dropdown keeps the Trades picker design',()=>{
+  const brand=read('prototype/brand-blue.css');
+  assert.match(brand,/\.profile-form-section select,/);
+  assert.match(brand,/\.trust-form select/);
+  assert.match(brand,/background-image:[\s\S]*var\(--green\)/);
+});
