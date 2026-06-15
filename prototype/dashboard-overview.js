@@ -12,7 +12,7 @@
   }
   function scheduleMarkup(){
     const jobs=jobsThisWeek().slice(0,3);
-    return jobs.length?jobs.map(job=>{const date=new Date(`${job.startDate}T12:00:00`);return`<button class="dashboard-week-item" type="button" data-dashboard-view="calendar"><span class="dashboard-week-date"><strong>${date.getDate()}</strong><small>${date.toLocaleDateString('en-US',{month:'short'})}</small></span><span class="dashboard-week-copy"><strong>${safe(job.title)}</strong><small>${safe(job.partnerCompany?.name)} · ${safe(job.city)}, ${safe(job.state)}</small></span></button>`}).join(''):'<div class="list-empty">No scheduled work in the next seven days.</div>';
+    return jobs.length?jobs.map(job=>{const date=new Date(`${job.startDate}T12:00:00`),partner=safe(job.partnerCompany?.name||'Trade partner'),location=[safe(job.city),safe(job.state)].filter(Boolean).join(', ');return`<button class="dashboard-week-item" type="button" data-dashboard-view="calendar"><span class="dashboard-week-date"><strong>${date.getDate()}</strong><small>${date.toLocaleDateString('en-US',{month:'short'})}</small></span><span class="dashboard-week-copy"><strong>${safe(job.title)}</strong><span class="dashboard-week-reference"><small>${partner}</small>${location?`<small>${location}</small>`:''}</span></span><span class="dashboard-week-arrow" aria-hidden="true">&rarr;</span></button>`}).join(''):'<div class="list-empty">No scheduled work in the next seven days.</div>';
   }
   function contractorOverview(){
     const posted=dashboard.postedJobs||[],open=posted.filter(job=>job.status==='published'),inProgress=posted.filter(job=>job.status==='awarded'),bidsToReview=open.reduce((sum,job)=>sum+(job.bidCount||0),0),week=jobsThisWeek().length;
