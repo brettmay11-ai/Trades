@@ -549,10 +549,15 @@ async function api(req, res, url) {
       const postedJobs = store.jobs.filter(item => item.postingCompanyId === company.id).map(item => enrichJob(store, item, company));
       const availableJobs = store.jobs.filter(item => item.status === 'published' && item.postingCompanyId !== company.id).map(item => ({ ...enrichJob(store, item, company), distanceMiles: inServiceArea(item, company).distance })).filter(item => item.distanceMiles <= radius)
         .sort((a, b) => { const score = job => (job.state === company.state ? 4 : 0) + (job.city.toLowerCase() === company.city.toLowerCase() ? 3 : 0) + (company.trades.some(trade => trade.toLowerCase() === job.trade.toLowerCase()) ? 5 : 0); return score(b) - score(a); });
+      const submittedBids = store.bids.filter(item => item.biddingCompanyId === company.id).map(item => {
+        const job = store.jobs.find(jobItem => jobItem.id === item.jobId);
+        return { ...item, job: job ? enrichJob(store, job, company) : null };
+      }).filter(item => item.job);
+      const scheduledJobs = store.jobs.filter(job => calendarParticipant(job, company.id) && job.startDate && job.endDate).map(job => calendarEvent(store, job, company.id));
       return json(res, 200, {
         user: { id: context.user.id, email: context.user.email, fullName: context.user.fullName },
         company: pub(company), conversations, directory, connections,
-        invites: store.networkInvites.filter(item => item.inviterCompanyId === company.id), referrals, postedJobs, availableJobs,
+        invites: store.networkInvites.filter(item => item.inviterCompanyId === company.id), referrals, postedJobs, availableJobs, submittedBids, scheduledJobs,
         marketplaceLocation: { city: company.city, state: company.state, ...locationFields(company), serviceRadius: radius },
         unreadNotifications: store.notifications.filter(item => item.companyId === company.id && !item.readAt).length
       });
