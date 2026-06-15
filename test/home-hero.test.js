@@ -22,3 +22,12 @@ test('landing job cards remain readable on mobile',()=>{
   assert.match(roleStyles,/\.role-switcher\{grid-template-columns:1fr 1fr\}/);
   assert.match(layout,/@media\(max-width:760px\)/);
 });
+
+test('landing proof strip focuses on useful marketplace benefits',()=>{
+  const html=read('prototype/index.html');
+  assert.match(html,/Jobs near your crew/);
+  assert.match(html,/Trade partners you can verify/);
+  assert.match(html,/Private bids and messages/);
+  assert.match(html,/Referrals that build your network/);
+  assert.doesNotMatch(html,/DFW is the first active market/);
+});
