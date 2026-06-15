@@ -31,3 +31,15 @@ test('landing proof strip focuses on useful marketplace benefits',()=>{
   assert.match(html,/Referrals that build your network/);
   assert.doesNotMatch(html,/DFW is the first active market/);
 });
+
+test('landing role paths use large green labels and omit the old trust section',()=>{
+  const html=read('prototype/index.html');
+  const styles=read('prototype/styles.css');
+  assert.match(html,/role-path-label">Contractor workspace/);
+  assert.match(html,/role-path-label">Subcontractor workspace/);
+  assert.match(html,/role-path-label">Dual capability/);
+  assert.match(styles,/\.role-path-label\{display:block;color:var\(--green\);font:800/);
+  assert.doesNotMatch(html,/Local trust\. National reach\./);
+  assert.doesNotMatch(html,/class="section trust-section"/);
+  assert.doesNotMatch(html,/href="#trust"/);
+});
