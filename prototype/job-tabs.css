@@ -1,0 +1,7 @@
+.job-tabs{display:none;margin:0 0 22px;padding:5px;gap:5px;border-radius:11px;background:var(--cream)}
+.job-tabs.show{display:grid;grid-template-columns:repeat(3,1fr)}
+.job-tab{display:flex;align-items:center;justify-content:center;gap:7px;padding:12px 8px;border:0;border-radius:8px;background:transparent;color:#5f6b63;font:700 13px/1 'DM Sans',sans-serif;cursor:pointer}
+.job-tab.active{background:#fff;color:var(--ink);box-shadow:0 5px 16px rgba(20,30,23,.08)}
+.job-tab-count{min-width:19px;height:19px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;border-radius:99px;background:var(--orange);color:#fff;font-size:10px;font-weight:800}
+.job-tab-count:empty{display:none}
+@media(max-width:768px){.job-tabs{margin-bottom:16px}.job-tab{padding:11px 5px;font-size:12px;gap:5px}}
