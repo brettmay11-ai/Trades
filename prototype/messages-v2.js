@@ -14,7 +14,7 @@ function messageDate(value){
 function messageTime(value){return new Date(value).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
 function conversationMarkup(item){
   const context=item.job?`${item.job.trade} · ${item.job.title}`:'General company conversation',updated=item.lastMessage?.createdAt||item.createdAt;
-  return`<button type="button" class="conversation-item ${item.id===activeConversationId?'active':''} ${item.unread?'unread':''}" data-conversation="${item.id}"><span class="company-mark">${initials(item.otherCompany.name)}</span><div class="conversation-copy"><span class="conversation-line"><strong>${escapeHtml(item.otherCompany.name)}</strong><time>${messageShortTime(updated)}</time></span><small class="conversation-job">${escapeHtml(context)}</small><small class="conversation-preview">${escapeHtml(item.lastMessage?.body||'Conversation ready')}</small></div>${item.unread?`<b>${item.unread}</b>`:''}</button>`;
+  return`<button type="button" class="conversation-item ${item.id===activeConversationId?'active':''} ${item.unread?'unread':''}" data-conversation="${item.id}"><span class="company-mark">${initials(item.otherCompany.name)}</span><div class="conversation-copy"><span class="conversation-line"><strong>${escapeHtml(item.otherCompany.name)}</strong><time>${messageShortTime(updated)}</time></span><small class="conversation-job">${escapeHtml(context)}${item.otherCompany.speaksSpanish?' · Speaks Spanish':''}</small><small class="conversation-preview">${escapeHtml(item.lastMessage?.body||'Conversation ready')}</small></div>${item.unread?`<b>${item.unread}</b>`:''}</button>`;
 }
 function filteredConversations(){
   const query=messageSearch.trim().toLowerCase();
@@ -48,7 +48,7 @@ openConversation=async function(conversationId){
     activeConversationId=conversationId;
     const result=await api(`/api/conversations/${conversationId}/messages`),locationText=[result.otherCompany.city,result.otherCompany.state].filter(Boolean).join(', '),job=document.getElementById('messageJob'),actions=document.getElementById('messageHeaderActions');
     document.getElementById('messageEmpty').hidden=true;document.getElementById('messageWorkspace').hidden=false;
-    document.getElementById('messageInitials').textContent=initials(result.otherCompany.name);document.getElementById('messageCompany').textContent=result.otherCompany.name;document.getElementById('messageMeta').textContent=[capabilityText(result.otherCompany),locationText].filter(Boolean).join(' · ');
+    document.getElementById('messageInitials').textContent=initials(result.otherCompany.name);document.getElementById('messageCompany').textContent=result.otherCompany.name;document.getElementById('messageMeta').textContent=[capabilityText(result.otherCompany),locationText,result.otherCompany.speaksSpanish?'Speaks Spanish':''].filter(Boolean).join(' · ');
     job.hidden=!result.job;job.textContent=result.job?`${result.job.trade} · ${result.job.title}`:'';
     actions.innerHTML=`${result.job?'<button class="button button-outline" type="button" data-message-view-job>View job</button>':''}<button class="button button-outline" type="button" data-message-view-profile>View profile</button>`;
     actions.querySelector('[data-message-view-job]')?.addEventListener('click',()=>switchView('jobs'));actions.querySelector('[data-message-view-profile]').addEventListener('click',()=>loadTrustProfile(result.otherCompany.id));
