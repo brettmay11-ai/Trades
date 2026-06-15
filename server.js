@@ -26,7 +26,7 @@ const cityCoordinates = { 'dallas,tx': [32.7767, -96.797], 'fort worth,tx': [32.
 // Extended company profile fields with maximum stored lengths.
 const profileFields = { profileImage: 2100000, about: 1800, legalName: 180, website: 250, phone: 40, contactEmail: 254, yearFounded: 4, employeeCount: 40, streetAddress: 180, serviceSummary: 800, projectTypes: 500, annualProjectVolume: 100, subcontractorRequirements: 800, paymentTerms: 500, crewSize: 40, yearsExperience: 40, minimumJobSize: 100, availability: 300 };
 
-const types = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8' };
+const types = { '.css': 'text/css; charset=utf-8', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon' };
 const headers = {
   'Content-Security-Policy': "default-src 'self'; script-src 'self' https://maps.googleapis.com https://maps.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://maps.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://maps.gstatic.com https://maps.googleapis.com; connect-src 'self' https://maps.googleapis.com; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
   'Referrer-Policy': 'strict-origin-when-cross-origin',
