@@ -65,6 +65,7 @@ openConversation=async function(conversationId){
   field.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();form.requestSubmit()}});
   document.getElementById('conversationSearch').addEventListener('input',event=>{messageSearch=event.target.value;renderConversations()});
   document.querySelectorAll('[data-message-filter]').forEach(button=>button.addEventListener('click',()=>{messageFilter=button.dataset.messageFilter;document.querySelectorAll('[data-message-filter]').forEach(item=>item.classList.toggle('active',item===button));renderConversations()}));
-  const baseSwitchView=switchView;switchView=function(name){baseSwitchView(name);if(name==='messages'&&dashboard?.conversations.length&&!activeConversationId)openConversation(dashboard.conversations[0].id)};
-  setTimeout(()=>{if(location.pathname==='/messages'&&dashboard?.conversations.length&&!activeConversationId)openConversation(dashboard.conversations[0].id)},350);
+  const shouldAutoOpenConversation=()=>!window.matchMedia('(max-width:768px)').matches;
+  const baseSwitchView=switchView;switchView=function(name){baseSwitchView(name);if(name==='messages'&&shouldAutoOpenConversation()&&dashboard?.conversations.length&&!activeConversationId)openConversation(dashboard.conversations[0].id)};
+  setTimeout(()=>{if(location.pathname==='/messages'&&shouldAutoOpenConversation()&&dashboard?.conversations.length&&!activeConversationId)openConversation(dashboard.conversations[0].id)},350);
 })();
