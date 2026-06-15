@@ -74,3 +74,25 @@
   color: var(--green);
   font-weight: 800;
 }
+
+.hero-search { display: none !important; }
+.capability-grid input:checked + span { border-color: #245f82; background: #eaf3f8; box-shadow: 0 0 0 2px rgba(36, 95, 130, .12); }
+.role-contractor { --role-accent: #245f82; --role-tint: #eaf3f8; }
+.role-subcontractor { --role-accent: #3f7ea3; --role-tint: #edf5f9; }
+.role-flexible { --role-accent: #174866; --role-tint: #e2edf3; }
+.role-contractor .dashboard-header,
+.role-subcontractor .dashboard-header,
+.role-flexible .dashboard-header { border-bottom: 3px solid var(--role-accent); padding-bottom: 20px; }
+.role-contractor .nav-company #navRole,
+.role-subcontractor .nav-company #navRole,
+.role-flexible .nav-company #navRole { border-color: rgba(170, 215, 239, .36); background: rgba(65, 132, 169, .28); }
+.role-contractor .contractor-profile-section,
+.role-subcontractor .subcontractor-profile-section,
+.role-flexible .contractor-profile-section,
+.role-flexible .subcontractor-profile-section { border-left-color: var(--role-accent); }
+.role-flexible .subcontractor-profile-section { border-left-color: #5e94b2; }
+.role-contractor .role-profile-intro,
+.role-subcontractor .role-profile-intro,
+.role-flexible .role-profile-intro { background: linear-gradient(135deg, #fff, var(--role-tint)); }
+.status-pill.suspended { color: #8d351d; background: #fff1eb; border-color: #e7a184; }
+.admin-account-action { min-height: 32px; padding: 0 10px; font-size: 9px; }

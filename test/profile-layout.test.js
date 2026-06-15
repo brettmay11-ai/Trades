@@ -18,3 +18,15 @@ test('marketplace reach is integrated into the rendered profile flow', () => {
   assert.match(dashboard, /location\.js\?v=20260614-profile-location1/);
   assert.match(dashboard, /profile-v2\.js\?v=/);
 });
+
+test('contractor, subcontractor, and flexible workspaces use blueprint role accents', () => {
+  const bridge = fs.readFileSync(path.join(root, 'prototype', 'dashboard-bridge.js'), 'utf8');
+  const brand = fs.readFileSync(path.join(root, 'prototype', 'brand-blue.css'), 'utf8');
+
+  assert.match(bridge, /role-contractor/);
+  assert.match(bridge, /role-subcontractor/);
+  assert.match(bridge, /role-flexible/);
+  assert.match(brand, /\.role-contractor \{ --role-accent: #245f82;/);
+  assert.match(brand, /\.role-subcontractor \{ --role-accent: #3f7ea3;/);
+  assert.match(brand, /\.role-flexible \{ --role-accent: #174866;/);
+});

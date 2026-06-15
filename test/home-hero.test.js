@@ -83,3 +83,10 @@ test('site uses the blueprint blue brand system across public and account pages'
   assert.match(brand,/\.admin-nav \{ background: #071c2a; \}/);
   assert.match(read('prototype/dashboard-bridge.js'),/brand-blue\.css\?v=20260615-blue1/);
 });
+
+test('landing hero removes the old create workspace and sign in box',()=>{
+  const script=read('prototype/home.js');
+  const brand=read('prototype/brand-blue.css');
+  assert.match(script,/document\.querySelector\('\.hero-search'\)\?\.remove\(\)/);
+  assert.match(brand,/\.hero-search \{ display: none !important; \}/);
+});

@@ -133,7 +133,7 @@ function adminCookie(token, age = adminSessionHours * 3600) {
 
 // ---- Domain helpers --------------------------------------------------------
 function pub(company) {
-  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, speaksSpanish: Boolean(company.speaksSpanish), createdAt: company.createdAt };
+  return { id: company.id, name: company.name, city: company.city || '', state: company.state || '', ...locationFields(company), capabilities: company.capabilities || [], trades: company.trades || [], serviceRadius: company.serviceRadius || 50, speaksSpanish: Boolean(company.speaksSpanish), accountStatus: company.accountStatus || 'active', createdAt: company.createdAt };
 }
 function companyDetail(company) {
   const detail = Object.fromEntries(Object.keys(profileFields).map(key => [key, company[key] || '']));
@@ -144,7 +144,7 @@ function ctx(req, store) {
   const user = store.users.find(item => item.id === session?.userId);
   const membership = store.memberships.find(item => item.userId === user?.id);
   const company = store.companies.find(item => item.id === membership?.companyId);
-  return user && company ? { user, company, membership } : null;
+  return user && company && (company.accountStatus || 'active') === 'active' ? { user, company, membership } : null;
 }
 function auth(req, res, store) { const context = ctx(req, store); if (!context) json(res, 401, { error: 'Sign in required' }); return context; }
 function adminCtx(req, store) {
@@ -398,6 +398,24 @@ async function api(req, res, url) {
       write(store);
       return json(res, 200, { ok: true }, { 'Set-Cookie': adminCookie('', 0) });
     }
+    const adminCompanyStatus = p.match(/^\/api\/admin\/companies\/([^/]+)\/status$/);
+    if (adminCompanyStatus && req.method === 'PATCH') {
+      const context = adminAuth(req, res, store);
+      if (!context) return;
+      const company = companyById(store, adminCompanyStatus[1]);
+      const b = await body(req);
+      const status = ['active', 'suspended'].includes(b.status) ? b.status : '';
+      if (!company || !status) return json(res, 400, { error: 'Choose a valid company account and status.' });
+      company.accountStatus = status;
+      company.statusUpdatedAt = now();
+      company.statusUpdatedBy = context.email;
+      if (status === 'suspended') {
+        const userIds = store.memberships.filter(item => item.companyId === company.id).map(item => item.userId);
+        store.sessions = store.sessions.filter(item => !userIds.includes(item.userId));
+      }
+      write(store);
+      return json(res, 200, { company: pub(company) });
+    }
     const adminFeedback = p.match(/^\/api\/admin\/feedback\/([^/]+)$/);
     if (adminFeedback && req.method === 'PATCH') {
       const context = adminAuth(req, res, store);
@@ -468,6 +486,7 @@ async function api(req, res, url) {
       const membership = store.memberships.find(item => item.userId === user.id);
       const company = companyById(store, membership?.companyId);
       if (!company) return json(res, 409, { error: 'This account needs support before it can sign in.' });
+      if ((company.accountStatus || 'active') !== 'active') return json(res, 403, { error: 'This company account is suspended. Contact Trades support for assistance.', code: 'account_suspended' });
       const session = { token: crypto.randomBytes(32).toString('hex'), userId: user.id, expiresAt: new Date(Date.now() + sessionHours * 3600e3).toISOString() };
       store.sessions = store.sessions.filter(item => item.expiresAt > now());
       store.sessions.push(session);

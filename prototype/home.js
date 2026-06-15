@@ -49,3 +49,4 @@ roleButtons.forEach((button,index)=>{
 });
 
 selectRole('contractor');
+document.querySelector('.hero-search')?.remove();
