@@ -36,7 +36,7 @@ const headers = {
 
 // ---- Storage ---------------------------------------------------------------
 function blank() {
-  return { users: [], companies: [], memberships: [], sessions: [], adminSessions: [], adminMagicLinks: [], feedback: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [] };
+  return { users: [], companies: [], memberships: [], sessions: [], adminSessions: [], adminMagicLinks: [], feedback: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [], personalEvents: [] };
 }
 function ensure() {
   fs.mkdirSync(dataRoot, { recursive: true });
@@ -721,7 +721,48 @@ async function api(req, res, url) {
     if (req.method === 'GET' && p === '/api/calendar') {
       const context = auth(req, res, store);
       if (!context) return;
-      return json(res, 200, { events: store.jobs.filter(job => calendarParticipant(job, context.company.id) && job.startDate && job.endDate).map(job => calendarEvent(store, job, context.company.id)) });
+      const jobEvents = store.jobs.filter(job => calendarParticipant(job, context.company.id) && job.startDate && job.endDate).map(job => calendarEvent(store, job, context.company.id));
+      const personal = store.personalEvents.filter(item => item.companyId === context.company.id).map(item => ({ id: item.id, custom: true, title: item.title, startDate: item.startDate, endDate: item.endDate, notes: item.notes || '' }));
+      return json(res, 200, { events: [...jobEvents, ...personal] });
+    }
+    if (req.method === 'POST' && p === '/api/calendar/events') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const b = await body(req);
+      const title = clean(b.title, 180);
+      const startDate = date(b.startDate);
+      const endDate = date(b.endDate) || startDate;
+      if (!title || !startDate) return json(res, 400, { error: 'Add an event title and start date.' });
+      if (endDate < startDate) return json(res, 400, { error: 'The end date cannot be before the start date.' });
+      const event = { id: uid('cal'), companyId: context.company.id, title, startDate, endDate, notes: clean(b.notes, 1000), createdAt: now() };
+      store.personalEvents.push(event);
+      write(store);
+      return json(res, 201, { event });
+    }
+    const calendarEventEdit = p.match(/^\/api\/calendar\/events\/([^/]+)$/);
+    if (calendarEventEdit && req.method === 'PATCH') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const event = store.personalEvents.find(item => item.id === calendarEventEdit[1] && item.companyId === context.company.id);
+      if (!event) return json(res, 404, { error: 'Calendar event not found.' });
+      const b = await body(req);
+      if (b.title !== undefined && clean(b.title, 180)) event.title = clean(b.title, 180);
+      if (b.startDate !== undefined && date(b.startDate)) event.startDate = date(b.startDate);
+      if (b.endDate !== undefined && date(b.endDate)) event.endDate = date(b.endDate);
+      if (b.notes !== undefined) event.notes = clean(b.notes, 1000);
+      if (event.endDate < event.startDate) event.endDate = event.startDate;
+      event.updatedAt = now();
+      write(store);
+      return json(res, 200, { event });
+    }
+    if (calendarEventEdit && req.method === 'DELETE') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const index = store.personalEvents.findIndex(item => item.id === calendarEventEdit[1] && item.companyId === context.company.id);
+      if (index === -1) return json(res, 404, { error: 'Calendar event not found.' });
+      store.personalEvents.splice(index, 1);
+      write(store);
+      return json(res, 200, { ok: true });
     }
     const calendarUpdate = p.match(/^\/api\/calendar\/jobs\/([^/.]+)$/);
     if (calendarUpdate && req.method === 'PUT') {
