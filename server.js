@@ -350,8 +350,11 @@ function adminDashboard(store, context) {
     ...store.messages.map(item => ({ id: item.id, type: 'message', title: 'Message sent', detail: `${item.senderName || 'A user'} sent a marketplace message`, createdAt: item.createdAt })),
     ...store.reviews.map(item => ({ id: item.id, type: 'review', title: 'Review submitted', detail: `${item.overallRating}-star review for ${companyById(store, item.reviewedCompanyId)?.name || 'Unknown company'}`, createdAt: item.createdAt }))
   ].filter(item => item.createdAt).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 100);
-  const contractors = store.companies.filter(item => item.capabilities?.includes('contractor')).length;
-  const subcontractors = store.companies.filter(item => item.capabilities?.includes('subcontractor')).length;
+  const contractorOnlyCompanies = store.companies.filter(item => item.capabilities?.includes('contractor') && !item.capabilities?.includes('subcontractor')).length;
+  const subcontractorOnlyCompanies = store.companies.filter(item => item.capabilities?.includes('subcontractor') && !item.capabilities?.includes('contractor')).length;
+  const dualRoleCompanies = store.companies.filter(item => item.capabilities?.includes('contractor') && item.capabilities?.includes('subcontractor')).length;
+  const contractors = contractorOnlyCompanies + dualRoleCompanies;
+  const subcontractors = subcontractorOnlyCompanies + dualRoleCompanies;
   const feedback = store.feedback.map(item => ({
     ...item,
     company: pub(companyById(store, item.companyId)),
@@ -363,7 +366,7 @@ function adminDashboard(store, context) {
     system: { persistentStorage, storageProvider: process.env.RAILWAY_VOLUME_MOUNT_PATH ? 'Railway volume' : process.env.DATA_DIR ? 'Configured directory' : 'Temporary filesystem', activeSessions: liveSessions.length },
     metrics: {
       users: store.users.length, companies: store.companies.length, contractors, subcontractors,
-      dualRoleCompanies: store.companies.filter(item => item.capabilities?.includes('contractor') && item.capabilities?.includes('subcontractor')).length,
+      contractorOnlyCompanies, subcontractorOnlyCompanies, dualRoleCompanies,
       publishedJobs: store.jobs.filter(item => item.status === 'published').length,
       awardedJobs: store.jobs.filter(item => item.status === 'awarded').length,
       completedJobs: store.jobs.filter(item => ['completed', 'closed'].includes(item.status)).length,
