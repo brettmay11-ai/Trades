@@ -67,7 +67,7 @@ test('landing hero uses the selected dark blueprint background',()=>{
   assert.match(styles,/\.hero \{[^}]*background: #0b2538;/);
   assert.match(styles,/background-size: 48px 48px, 48px 48px, 12px 12px, 12px 12px;/);
   assert.match(styles,/\.hero-glow-two \{[^}]*background: #5e94b2;/);
-  assert.match(html,/styles\.css\?v=20260615-home7/);
+  assert.match(html,/styles\.css\?v=20260616-logo1/);
 });
 
 test('site uses the blueprint blue brand system across public and account pages',()=>{

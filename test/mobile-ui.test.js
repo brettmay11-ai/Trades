@@ -7,7 +7,7 @@ const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 
 test('dashboard mobile shell keeps five primary tabs and exposes direct header tools',()=>{
   const html=read('prototype/dashboard.html'),styles=read('prototype/mobile.css'),script=read('prototype/mobile.js');
-  assert.match(html,/mobile\.css\?v=20260615-mobile3/);
+  assert.match(html,/mobile\.css\?v=20260616-mobile8/);
   assert.match(html,/mobile\.js\?v=20260615-mobile3/);
   assert.match(styles,/grid-template-columns:repeat\(5,1fr\)/);
   assert.match(styles,/\[data-view="calendar"\],\.dashboard-nav nav \[data-view="notifications"\]\{display:none\}/);
@@ -24,11 +24,14 @@ test('mobile messages use an inbox-to-conversation flow',()=>{
   assert.match(script,/mobile-message-back/);
   assert.match(script,/classList\.add\('mobile-chat-open'\)/);
   assert.match(messages,/shouldAutoOpenConversation/);
+  assert.match(styles,/mobile-chat-open\) \.feedback-launcher\{display:none\}/);
+  assert.match(styles,/\[data-message-view-job\]:after\{content:"handyman"\}/);
+  assert.match(styles,/\[data-message-view-profile\]:after\{content:"badge"\}/);
 });
 
 test('public and account pages load the phone-first layer',()=>{
-  assert.match(read('prototype/index.html'),/mobile\.css\?v=20260615-mobile7/);
-  assert.match(read('prototype/account.html'),/mobile\.css\?v=20260615-mobile3/);
+  assert.match(read('prototype/index.html'),/mobile\.css\?v=20260616-mobile8/);
+  assert.match(read('prototype/account.html'),/mobile\.css\?v=20260616-mobile8/);
   const styles=read('prototype/mobile.css');
   assert.match(styles,/\.role-preview\{width:100%;overflow:visible\}/);
   assert.match(styles,/\.account-panel\{padding:16px 12px 30px\}/);
