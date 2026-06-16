@@ -1005,7 +1005,7 @@ async function api(req, res, url) {
 }
 
 // ---- Static + page routes --------------------------------------------------
-const routes = { '/pricing': '/pricing.html', '/hero-options': '/hero-options.html', '/login': '/account.html', '/signup': '/account.html', '/forgot-password': '/account.html', '/reset-password': '/account.html', '/dashboard': '/dashboard.html', '/messages': '/dashboard.html', '/network': '/dashboard.html', '/jobs': '/dashboard.html', '/profile': '/dashboard.html', '/calendar': '/dashboard.html', '/notifications': '/dashboard.html', '/admin': '/admin.html', '/admin/login': '/admin-login.html', '/admin/verify': '/admin-login.html' };
+const routes = { '/terms': '/terms.html', '/privacy': '/privacy.html', '/pricing': '/pricing.html', '/hero-options': '/hero-options.html', '/login': '/account.html', '/signup': '/account.html', '/forgot-password': '/account.html', '/reset-password': '/account.html', '/dashboard': '/dashboard.html', '/messages': '/dashboard.html', '/network': '/dashboard.html', '/jobs': '/dashboard.html', '/profile': '/dashboard.html', '/calendar': '/dashboard.html', '/notifications': '/dashboard.html', '/admin': '/admin.html', '/admin/login': '/admin-login.html', '/admin/verify': '/admin-login.html' };
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
