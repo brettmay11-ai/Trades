@@ -35,4 +35,5 @@ test('public and account pages load the phone-first layer',()=>{
   const styles=read('prototype/mobile.css');
   assert.match(styles,/\.role-preview\{width:100%;overflow:visible\}/);
   assert.match(styles,/\.account-panel\{padding:16px 12px 30px\}/);
+  assert.match(styles,/profile-save-bar\) \.feedback-launcher/);
 });
