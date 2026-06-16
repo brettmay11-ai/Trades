@@ -1,6 +1,6 @@
 ﻿const locationStyle=document.createElement('link');
 locationStyle.rel='stylesheet';
-locationStyle.href='location.css?v=20260614-profile-location1';
+locationStyle.href='location.css?v=20260616-loc2';
 document.head.appendChild(locationStyle);
 
 function syncMarketplaceLocation(){
