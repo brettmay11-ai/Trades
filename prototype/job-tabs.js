@@ -37,7 +37,7 @@
     find: { label: 'Find work', sections: () => [findSection()] },
     bids: { label: 'My bids', sections: () => [document.getElementById('outstandingBidsSection')], count: () => dashboard.availableJobs.filter(job => job.myBid).length },
     won: { label: 'Work won', sections: () => [document.getElementById('awardedWorkSection')], count: () => (dashboard.submittedBids || []).filter(bid => bid.status === 'accepted').length },
-    posted: { label: 'Posted jobs', sections: () => [document.getElementById('jobPostForm'), document.getElementById('postedJobsSection')], count: () => dashboard.postedJobs.filter(job => job.status === 'published').length },
+    posted: { label: 'Posted jobs', sections: () => [document.getElementById('postedJobsSection')], count: () => dashboard.postedJobs.filter(job => job.status === 'published').length },
     awarded: { label: 'Awarded jobs', sections: () => [document.getElementById('contractorAwardedSection')], count: () => dashboard.postedJobs.filter(job => job.status !== 'published').length }
   };
 
