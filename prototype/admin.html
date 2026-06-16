@@ -20,6 +20,7 @@
       <button class="active" data-admin-view="overview">Overview</button>
       <button data-admin-view="companies">Users & companies</button>
       <button data-admin-view="jobs">Marketplace jobs</button>
+      <button data-admin-view="revenue">Revenue</button>
       <button data-admin-view="feedback">Feedback <span id="feedbackCount"></span></button>
       <button data-admin-view="activity">Recent activity</button>
     </nav>
@@ -50,6 +51,15 @@
     <section class="admin-view" id="jobsView" hidden>
       <div class="view-toolbar"><div><span class="kicker">Marketplace operations</span><h2>All posted jobs</h2></div><input id="jobSearch" placeholder="Search jobs, companies, trades, or locations"></div>
       <div class="admin-card table-card"><div class="admin-table-wrap"><table><thead><tr><th>Job</th><th>Posting company</th><th>Market</th><th>Status</th><th>Bids</th><th>Posted</th></tr></thead><tbody id="jobTable"></tbody></table></div></div>
+    </section>
+    <section class="admin-view" id="revenueView" hidden>
+      <div class="view-toolbar"><div><span class="kicker">Marketplace revenue</span><h2>Revenue dashboard</h2></div><p class="admin-view-note">Estimated from accepted bids and awarded job budgets.</p></div>
+      <div class="admin-stat-grid revenue-stat-grid" id="revenueMetricGrid"></div>
+      <div class="admin-grid">
+        <article class="admin-card"><div class="card-title"><div><span class="kicker">Markets</span><h2>Awarded value by market</h2></div></div><div class="revenue-rank-list" id="revenueMarketList"></div></article>
+        <article class="admin-card"><div class="card-title"><div><span class="kicker">Trades</span><h2>Awarded value by trade</h2></div></div><div class="revenue-rank-list" id="revenueTradeList"></div></article>
+        <article class="admin-card admin-card-wide"><div class="card-title"><div><span class="kicker">Recent awards</span><h2>Accepted jobs</h2></div></div><div class="revenue-awards-list" id="revenueAwardsList"></div></article>
+      </div>
     </section>
     <section class="admin-view" id="activityView" hidden>
       <div class="view-toolbar"><div><span class="kicker">Audit feed</span><h2>Recent platform activity</h2></div><select id="activityFilter"><option value="">All activity</option><option value="account">Accounts</option><option value="job">Jobs</option><option value="bid">Bids</option><option value="message">Messages</option><option value="review">Reviews</option></select></div>

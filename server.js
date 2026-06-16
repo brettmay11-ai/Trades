@@ -275,6 +275,48 @@ function countBy(items, key) {
     return counts;
   }, {})).map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
+function moneyEstimate(value) {
+  const values = [...String(value || '').toLowerCase().replace(/,/g, '').matchAll(/(?:\$)?\s*(\d+(?:\.\d+)?)\s*([km])?/g)]
+    .map(match => Number(match[1]) * (match[2] === 'm' ? 1000000 : match[2] === 'k' ? 1000 : 1))
+    .filter(amount => amount > 0);
+  return values.length ? Math.round(values.reduce((sum, amount) => sum + amount, 0) / values.length) : 0;
+}
+function revenueDashboard(store) {
+  const liveBids = store.bids.filter(bid => bid.status !== 'withdrawn');
+  const openJobs = store.jobs.filter(job => job.status === 'published');
+  const awardedRows = store.jobs.filter(job => ['awarded', 'completed', 'closed'].includes(job.status)).map(job => {
+    const bid = store.bids.find(item => item.id === job.awardedBidId) || store.bids.find(item => item.jobId === job.id && item.status === 'accepted');
+    return { job, bid, estimate: moneyEstimate(bid?.amount) || moneyEstimate(job.budget) };
+  });
+  const awardedValue = awardedRows.reduce((sum, row) => sum + row.estimate, 0);
+  const bidPipelineValue = liveBids.reduce((sum, bid) => sum + moneyEstimate(bid.amount), 0);
+  const groupRevenue = (key) => Object.values(awardedRows.reduce((groups, row) => {
+    const label = key(row.job) || 'Not specified';
+    groups[label] ||= { label, awardedJobs: 0, awardedValue: 0, bidCount: 0 };
+    groups[label].awardedJobs += 1;
+    groups[label].awardedValue += row.estimate;
+    groups[label].bidCount += store.bids.filter(bid => bid.jobId === row.job.id && bid.status !== 'withdrawn').length;
+    return groups;
+  }, {})).sort((a, b) => b.awardedValue - a.awardedValue || b.awardedJobs - a.awardedJobs).slice(0, 6);
+  return {
+    metrics: {
+      awardedValue,
+      bidPipelineValue,
+      averageBidValue: liveBids.length ? Math.round(bidPipelineValue / liveBids.length) : 0,
+      averageBidsPerOpenJob: openJobs.length ? Number((liveBids.filter(bid => openJobs.some(job => job.id === bid.jobId)).length / openJobs.length).toFixed(1)) : 0,
+      estimatedPlatformFeeAt5: Math.round(awardedValue * 0.05),
+      awardedJobs: awardedRows.length
+    },
+    markets: groupRevenue(job => [job.city, job.state].filter(Boolean).join(', ')),
+    trades: groupRevenue(job => job.trade),
+    recentAwards: awardedRows.sort((a, b) => String(b.job.awardedAt || b.job.updatedAt || b.job.createdAt).localeCompare(String(a.job.awardedAt || a.job.updatedAt || a.job.createdAt))).slice(0, 8).map(row => ({
+      id: row.job.id, title: row.job.title, trade: row.job.trade, market: [row.job.city, row.job.state].filter(Boolean).join(', '), value: row.estimate,
+      contractor: companyById(store, row.job.postingCompanyId)?.name || 'Unknown contractor',
+      subcontractor: companyById(store, row.job.awardedCompanyId)?.name || 'Unknown subcontractor',
+      awardedAt: row.job.awardedAt || row.job.updatedAt || row.job.createdAt
+    }))
+  };
+}
 function adminDashboard(store, context) {
   const liveSessions = store.sessions.filter(item => item.expiresAt > now());
   const companies = store.companies.map(company => {
@@ -336,7 +378,7 @@ function adminDashboard(store, context) {
       jobStatuses: countBy(store.jobs, 'status'),
       jobTrades: countBy(store.jobs, 'trade')
     },
-    companies, jobs, feedback, activity
+    companies, jobs, feedback, revenue: revenueDashboard(store), activity
   };
 }
 
