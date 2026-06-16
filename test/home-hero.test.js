@@ -15,6 +15,18 @@ test('landing hero swaps role-specific marketplace job cards',()=>{
   assert.doesNotMatch(script,/preview-window|preview-app|preview-nav/);
 });
 
+test('landing page exposes Facebook-ready social preview metadata',()=>{
+  const html=read('prototype/index.html');
+  assert.match(html,/<link rel="canonical" href="https:\/\/findtrades\.co\/">/);
+  assert.match(html,/property="og:title" content="Trades \| The Smart Construction Trade Network"/);
+  assert.match(html,/property="og:image" content="https:\/\/findtrades\.co\/trades-social-preview\.png"/);
+  assert.match(html,/property="og:image:secure_url" content="https:\/\/findtrades\.co\/trades-social-preview\.png"/);
+  assert.match(html,/property="og:image:type" content="image\/png"/);
+  assert.match(html,/property="og:image:alt"/);
+  assert.match(html,/name="twitter:image" content="https:\/\/findtrades\.co\/trades-social-preview\.png"/);
+  assert.ok(fs.existsSync(path.join(root,'prototype','trades-social-preview.png')));
+});
+
 test('landing job cards remain readable on mobile',()=>{
   const roleStyles=read('prototype/home-role.css');
   const layout=read('prototype/home-hero-layout.css');
