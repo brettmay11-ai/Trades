@@ -36,7 +36,7 @@ const headers = {
 
 // ---- Storage ---------------------------------------------------------------
 function blank() {
-  return { users: [], companies: [], memberships: [], sessions: [], adminSessions: [], adminMagicLinks: [], feedback: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [], personalEvents: [] };
+  return { users: [], companies: [], memberships: [], sessions: [], adminSessions: [], adminMagicLinks: [], feedback: [], conversations: [], messages: [], jobs: [], bids: [], networkConnections: [], networkInvites: [], referrals: [], portfolioProjects: [], credentials: [], savedSearches: [], notifications: [], reviews: [], passwordResetTokens: [], personalEvents: [], jobQuestions: [] };
 }
 function ensure() {
   fs.mkdirSync(dataRoot, { recursive: true });
@@ -655,7 +655,7 @@ async function api(req, res, url) {
       if (!context) return;
       const job = store.jobs.find(item => item.id === jobBids[1]);
       if (!job || job.postingCompanyId !== context.company.id) return json(res, 403, { error: 'Only the posting company can review these bids.' });
-      return json(res, 200, { job: enrichJob(store, job, context.company), bids: store.bids.filter(item => item.jobId === job.id).map(item => ({ ...item, biddingCompany: pub(companyById(store, item.biddingCompanyId)) })) });
+      return json(res, 200, { job: enrichJob(store, job, context.company), bids: store.bids.filter(item => item.jobId === job.id).map(item => { const bidder = companyById(store, item.biddingCompanyId); const ratings = reviewSummary(store, bidder.id); return { ...item, biddingCompany: pub(bidder), rating: ratings.overallRating, reviewCount: ratings.count, distanceMiles: distanceMiles(job, bidder) }; }) });
     }
     if (jobBids && req.method === 'POST') {
       const context = auth(req, res, store);
@@ -692,6 +692,62 @@ async function api(req, res, url) {
       notify(store, job.awardedCompanyId, 'job_awarded', 'You were awarded a job', `${context.company.name} awarded you ${job.title}.`, '/calendar', job.id);
       write(store);
       return json(res, 200, { event: calendarEvent(store, job, context.company.id) });
+    }
+    const bidDecline = p.match(/^\/api\/jobs\/([^/]+)\/bids\/([^/]+)\/decline$/);
+    if (bidDecline && req.method === 'POST') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const job = store.jobs.find(item => item.id === bidDecline[1]);
+      const bid = store.bids.find(item => item.id === bidDecline[2] && item.jobId === job?.id);
+      if (!job || job.postingCompanyId !== context.company.id) return json(res, 403, { error: 'Only the posting contractor can decline bids.' });
+      if (!bid || bid.status !== 'submitted') return json(res, 400, { error: 'Only open bids can be declined.' });
+      const b = await body(req);
+      bid.status = 'declined';
+      bid.declineReason = clean(b.reason, 500);
+      bid.updatedAt = now();
+      notify(store, bid.biddingCompanyId, 'bid_declined', 'Bid not selected', `${context.company.name} declined your bid on ${job.title}.${bid.declineReason ? ` Note: ${bid.declineReason}` : ''}`, '/jobs', bid.id);
+      write(store);
+      return json(res, 200, { bid });
+    }
+    const jobQuestionAnswer = p.match(/^\/api\/jobs\/([^/]+)\/questions\/([^/]+)\/answer$/);
+    if (jobQuestionAnswer && req.method === 'POST') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const job = store.jobs.find(item => item.id === jobQuestionAnswer[1]);
+      const question = store.jobQuestions.find(item => item.id === jobQuestionAnswer[2] && item.jobId === job?.id);
+      if (!job || job.postingCompanyId !== context.company.id) return json(res, 403, { error: 'Only the posting contractor can answer questions.' });
+      const b = await body(req);
+      const answer = clean(b.answer, 1500);
+      if (!question || !answer) return json(res, 400, { error: 'Write an answer first.' });
+      question.answer = answer;
+      question.answeredAt = now();
+      notify(store, question.companyId, 'question_answered', 'Your question was answered', `${context.company.name} answered your question on ${job.title}.`, '/jobs', question.id);
+      write(store);
+      return json(res, 200, { question });
+    }
+    const jobQuestionsRoute = p.match(/^\/api\/jobs\/([^/]+)\/questions$/);
+    if (jobQuestionsRoute && req.method === 'GET') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const job = store.jobs.find(item => item.id === jobQuestionsRoute[1]);
+      if (!job) return json(res, 404, { error: 'Job not found.' });
+      const questions = store.jobQuestions.filter(item => item.jobId === job.id).map(item => ({ ...item, askingCompany: pub(companyById(store, item.companyId)) }));
+      return json(res, 200, { job: { id: job.id, title: job.title, postingCompanyId: job.postingCompanyId }, questions });
+    }
+    if (jobQuestionsRoute && req.method === 'POST') {
+      const context = auth(req, res, store);
+      if (!context) return;
+      const job = store.jobs.find(item => item.id === jobQuestionsRoute[1]);
+      const b = await body(req);
+      const text = clean(b.question, 1500);
+      if (!job || job.status !== 'published') return json(res, 404, { error: 'This job is not open for questions.' });
+      if (job.postingCompanyId === context.company.id) return json(res, 400, { error: 'Use answers to reply on your own job.' });
+      if (!text) return json(res, 400, { error: 'Write a question first.' });
+      const question = { id: uid('qst'), jobId: job.id, companyId: context.company.id, question: text, answer: '', answeredAt: null, createdAt: now() };
+      store.jobQuestions.push(question);
+      notify(store, job.postingCompanyId, 'question_asked', 'New question on your job', `${context.company.name} asked a question on ${job.title}.`, '/jobs', question.id);
+      write(store);
+      return json(res, 201, { question });
     }
     const jobComplete = p.match(/^\/api\/jobs\/([^/]+)\/complete$/);
     if (jobComplete && req.method === 'POST') {
@@ -1067,5 +1123,35 @@ const server = http.createServer((req, res) => {
     fs.createReadStream(file).pipe(res);
   });
 });
+
+// ---- Weekly job digest ------------------------------------------------------
+// Emails subcontractor companies a summary of new published jobs in their
+// service area. Runs on an interval; each company receives at most one digest
+// per ~7 days. No-ops entirely without RESEND_API_KEY.
+function sendWeeklyDigests() {
+  if (!process.env.RESEND_API_KEY) return;
+  const store = read();
+  const weekAgo = Date.now() - 7 * 864e5;
+  let changed = false;
+  for (const company of store.companies) {
+    if (!company.capabilities?.includes('subcontractor')) continue;
+    const last = company.lastDigestAt ? new Date(company.lastDigestAt).getTime() : 0;
+    if (Date.now() - last < 6.5 * 864e5) continue;
+    const jobs = store.jobs.filter(job => job.status === 'published' && job.postingCompanyId !== company.id && new Date(job.createdAt).getTime() > weekAgo && inServiceArea(job, company).matches);
+    if (!jobs.length) continue;
+    const to = companyEmail(store, company.id);
+    if (!to) continue;
+    company.lastDigestAt = now();
+    changed = true;
+    const rows = jobs.slice(0, 5).map(job => `<li style="margin:8px 0;line-height:1.5"><strong>${escapeHtml(job.title)}</strong> — ${escapeHtml(job.trade)} in ${escapeHtml(job.city)}, ${escapeHtml(job.state)}</li>`).join('');
+    const heading = `${jobs.length} new job${jobs.length === 1 ? '' : 's'} near ${company.city || 'you'} this week`;
+    const html = emailLayout(heading, `<p style="line-height:1.6">Contractors posted new work in your service area on Trades:</p><ul style="padding-left:18px">${rows}</ul>${jobs.length > 5 ? `<p style="line-height:1.6">…and ${jobs.length - 5} more.</p>` : ''}`, 'Browse jobs', `${appBaseUrl}/jobs`);
+    const text = `${heading}\n\n${jobs.slice(0, 5).map(job => `- ${job.title} — ${job.trade} in ${job.city}, ${job.state}`).join('\n')}\n\nBrowse jobs: ${appBaseUrl}/jobs`;
+    sendEmail({ to, subject: heading, html, text, idempotencyKey: `digest-${company.id}-${company.lastDigestAt}` }).catch(error => console.error('Digest email failed', error));
+  }
+  if (changed) write(store);
+}
+setInterval(() => { try { sendWeeklyDigests(); } catch (error) { console.error(error); } }, 6 * 3600e3).unref();
+setTimeout(() => { try { sendWeeklyDigests(); } catch (error) { console.error(error); } }, 60e3).unref();
 
 server.listen(port, '0.0.0.0', () => console.log(`Trades marketplace listening on port ${port}; storage=${persistentStorage ? 'persistent' : 'temporary'}`));

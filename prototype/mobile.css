@@ -75,7 +75,14 @@
   .network-actions{gap:10px}.network-form .form-row,.profile-form-section .form-row{grid-template-columns:1fr}.network-form>.button{width:100%}.network-section{margin-top:25px}
   .role-profile-intro{margin:14px 0;padding:15px;display:grid;grid-template-columns:70px 1fr;gap:13px}.company-profile-image,.company-profile-placeholder{width:70px;height:70px;flex:0 0 70px;border-width:3px;border-radius:16px}.role-profile-intro h3{font-size:19px}.role-profile-intro p{grid-column:1/-1;font-size:11px}
   .company-profile-editor{margin:14px 0;grid-template-columns:1fr}.profile-save-bar{bottom:calc(var(--mobile-nav-height) + 10px + env(safe-area-inset-bottom));padding:9px}.profile-save-bar .button{flex:1}
-  .calendar-heading{margin-bottom:15px;gap:12px}.calendar-heading h2{font-size:27px}.calendar-month-controls{width:100%;justify-content:space-between}.calendar-board{display:none}.upcoming-panel{margin:0;padding:16px}
+  .calendar-heading{margin-bottom:15px;gap:12px}.calendar-heading h2{font-size:27px}.calendar-month-controls{width:100%;justify-content:space-between}.calendar-layout{display:block}
+  .calendar-board{display:block;margin-bottom:12px;padding:9px}
+  .calendar-weekdays span{padding:5px 2px}
+  .calendar-day{min-height:42px;padding:4px 2px;text-align:center}
+  .calendar-day>span{margin-bottom:2px;font-size:10px}
+  .calendar-day button,.calendar-day small{display:none}
+  .calendar-day.has-event:after{content:"";display:block;width:6px;height:6px;margin:3px auto 0;border-radius:50%;background:var(--orange)}
+  .upcoming-panel{margin:0;padding:16px}
   .notification-item{padding:15px!important;gap:10px!important}.notification-item strong{font-size:13px!important}.notification-item p{font-size:11px!important}
 
   .modal,.feedback-dialog,.trust-modal,.job-post-modal{width:100%;max-width:none;max-height:92dvh;margin:auto 0 0;padding:22px 16px calc(18px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0}
